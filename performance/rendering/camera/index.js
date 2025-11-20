@@ -7,8 +7,8 @@ const w = window.innerWidth;
 const h = window.innerHeight;
 // export const perspective = 400;
 const FOV = 120;
-export const perspective = Math.pow( w/2*w/2 + h/2*h/2, 0.5 ) / Math.tan( (FOV / 2) * Math.PI / 180 );
-viewport.style.perspective = perspective + "px";
+const perspective = Math.pow( w/2*w/2 + h/2*h/2, 0.5 ) / Math.tan( (FOV / 2) * Math.PI / 180 );
+viewport.style.setProperty("--perspective", perspective + "px");
 
 const sensitivity = .2;
 const position = { x: 0, y: 0, z: 0 };

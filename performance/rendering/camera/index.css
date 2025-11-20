@@ -4,7 +4,7 @@
 
 #viewport {
   position: absolute;
-  perspective: 400px;
+  perspective: var(--perspective);
   inset: 0;
   width: 100%;
   height: 100%;
@@ -17,6 +17,7 @@
     height: 0px;
     left: 50%;
     top: 50%;
+    translate: 0 0 var(--perspective);
 
     #scene {
       transform-style: preserve-3d;
