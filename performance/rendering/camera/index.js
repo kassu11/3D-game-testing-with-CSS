@@ -1,11 +1,9 @@
-import { move, rotate } from "./camera.js";
+import { translate } from "./camera.js";
 
 const viewport = document.querySelector("#viewport");
-const scene = document.querySelector("#scene");
 const camera = document.querySelector("#camera");
 const w = window.innerWidth;
 const h = window.innerHeight;
-// export const perspective = 400;
 const FOV = 120;
 const perspective = Math.pow( w/2*w/2 + h/2*h/2, 0.5 ) / Math.tan( (FOV / 2) * Math.PI / 180 );
 viewport.style.setProperty("--perspective", perspective + "px");
@@ -14,24 +12,14 @@ const sensitivity = .2;
 const position = { x: 0, y: 0, z: 0 };
 const rotation = { x: 0, y: 0, z: 0 };
 
-for (let i = 0; i < 100; i++) {
-  const div = document.createElement("div");
-  div.classList.add("tile");
-  div.style.transform = `translate3d(200px, 200px, ${-i * 10}px)`;
-  scene.append(div);
-}
-
-for (let x = 0; x < 1; x++) {
-  for (let z = 0; z < 1; z++) {
+for (let x = 0; x < 20; x++) {
+  for (let z = 0; z < 20; z++) {
     const div = document.createElement("div");
-    div.classList.add("tile", "floor");
-    div.style.transform = `translate3d(${x * 1000}px, 500px, ${z * -1000}px) rotateX(90deg)`;
-    scene.append(div);
+    div.classList.add("tile");
+    div.style.transform = `translate3d(${x * 100}px, 500px, ${z * -100}px) rotateX(90deg)`;
+    camera.append(div);
   }
 }
-
-
-
 
 
 const userKeys = new Set();
@@ -71,9 +59,9 @@ const movePlayer = deltaTime => {
   if (userKeys.has("Space")) position.y += moveSpeed;
   if (userKeys.has("ShiftLeft")) position.y -= moveSpeed;
 
-  move(position.x, position.y, position.z, scene);
+  // move(position.x, position.y, position.z, camera);
+  translate(position, rotation, camera);
 }
-
 
 const renderLoop = (currentTime, previousTime) => {
   window.requestAnimationFrame(time => renderLoop(time, currentTime));
@@ -100,7 +88,8 @@ function mouseMovement(event) {
   rotation.y = Math.min(90, Math.max(rotation.y, -90));
 
   // camera.updateRotation();
-  rotate(rotation.x, rotation.y, rotation.z, camera);
+  // rotate(rotation.x, rotation.y, rotation.z, camera);
+  translate(position, rotation, camera);
 }
 
 window.requestAnimationFrame(previousTime => window.requestAnimationFrame(currentTime => renderLoop(currentTime, previousTime)));

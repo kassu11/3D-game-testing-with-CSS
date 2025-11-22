@@ -1,7 +1,3 @@
-export const move = (x, y, z, sceneElement) => {
-  sceneElement.style.translate = `${-x}px ${y}px ${-z}px`;
-}
-
-export const rotate = (x, y, z, cameraElement) => {
-  cameraElement.style.transform = `rotateX(${y}deg) rotateY(${x}deg) rotateZ(${z}deg)`;
+export const translate = (position, rotation, cameraElement) => {
+  cameraElement.style.transform = `rotateX(${rotation.y}deg) rotateY(${rotation.x}deg) rotateZ(${rotation.z}deg) translate3d(${-position.x}px, ${position.y}px, ${-position.z}px)`;
 }
