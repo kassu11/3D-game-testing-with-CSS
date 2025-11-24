@@ -12,11 +12,11 @@ const sensitivity = .2;
 const position = { x: 0, y: 0, z: 0 };
 const rotation = { x: 0, y: 0, z: 0 };
 
-for (let x = 0; x < 20; x++) {
-  for (let z = 0; z < 20; z++) {
+for (let x = 0; x < 10; x++) {
+  for (let z = 0; z < 10; z++) {
     const div = document.createElement("div");
     div.classList.add("tile");
-    div.style.transform = `translate3d(${x * 100}px, 500px, ${z * -100}px) rotateX(90deg)`;
+    div.style.transform = `translate3d(${x * 100}px, ${x * z * 5}px, ${z * -100}px) rotateX(90deg)`;
     camera.append(div);
   }
 }
@@ -37,7 +37,7 @@ window.onblur = () => userKeys.clear();
 
 const movePlayer = deltaTime => {
   // Movement speed is 250 units in second
-  const moveSpeed = 250 * deltaTime / 1000;
+  const moveSpeed = 600 * deltaTime / 1000;
 
   if (userKeys.has("KeyW")) {
     position.z += moveSpeed * Math.cos((rotation.x + 180) * Math.PI / 180)
