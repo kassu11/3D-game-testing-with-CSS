@@ -76,8 +76,11 @@ function updateFpsCounter(deltaTime) {
 
 
 
-function handleEnterPointerLock() {
+function handleEnterPointerLock(e) {
   if (document.pointerLockElement || animateCheckbox.checked) {
+    return;
+  }
+  if (e?.target?.closest(".info-wrapper")) {
     return;
   }
 
@@ -104,6 +107,7 @@ function handleResize() {
 function handleAnimateChange(e) {
   document.body.classList.toggle("animate", e.target.checked);
   e.target.blur();
+  handleEnterPointerLock()
 }
 const handleBorderChange = (e) => document.body.classList.toggle("border", e.target.checked);
 const handleSizeInput = (e) => createTiles(+e.target.value);
@@ -131,6 +135,6 @@ const renderLoop = (currentTime, previousTime) => {
 }
 
 handleResize();
-createTiles(35);
+createTiles(32);
 
 window.requestAnimationFrame(previousTime => window.requestAnimationFrame(currentTime => renderLoop(currentTime, previousTime)));
