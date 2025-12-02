@@ -63,13 +63,13 @@ const renderLoop = (currentTime, previousTime) => {
 
   const deltaTime = currentTime - previousTime;
   movePlayer(deltaTime);
-  fpsCounter(deltaTime);
+  updateFpsCounter(deltaTime);
   camera.style.transform = `rotateX(${rotation.y}deg) rotateY(${rotation.x}deg) rotateZ(${rotation.z}deg) translate3d(${-position.x}px, ${position.y}px, ${-position.z}px)`;
 }
 
 const fpsValues = Array(20).fill(0);
 let fpsIndex = 0;
-function fpsCounter(deltaTime) {
+function updateFpsCounter(deltaTime) {
   fpsValues[fpsIndex++ % fpsValues.length] = deltaTime;
   const sum = fpsValues.reduce((acc, v) => acc + v);
   fps.textContent = Math.round((1000 * fpsValues.length) / sum);
@@ -80,14 +80,14 @@ document.addEventListener("pointerlockerror", () => console.error("Error locking
 
 document.addEventListener("pointerlockchange", () => {
   if (document.pointerLockElement) {
-    document.addEventListener("mousemove", mouseMovement);
+    document.addEventListener("mousemove", handleMouseMove);
   } else {
-    document.removeEventListener("mousemove", mouseMovement);
+    document.removeEventListener("mousemove", handleMouseMove);
     userKeys.clear();
   }
 });
 
-function mouseMovement(event) {
+function handleMouseMove(event) {
   rotation.x += (event?.movementX ?? 0) * sensitivity;
   rotation.y -= (event?.movementY ?? 0) * sensitivity;
   rotation.y = Math.min(90, Math.max(rotation.y, -90));

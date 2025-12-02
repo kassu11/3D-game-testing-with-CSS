@@ -65,7 +65,7 @@ function mouseHandler(e) {
 
 const fpsValues = Array(20).fill(0);
 let fpsIndex = 0;
-function fpsCounter(deltaTime) {
+function updateFpsCounter(deltaTime) {
   fpsValues[fpsIndex++ % fpsValues.length] = deltaTime;
   const sum = fpsValues.reduce((acc, v) => acc + v);
   fps.textContent = Math.round((1000 * fpsValues.length) / sum);
@@ -77,7 +77,7 @@ const renderLoop = (currentTime, previousTime) => {
   const deltaTime = currentTime - previousTime;
 
   movePlayer(deltaTime);
-  fpsCounter(deltaTime);
+  updateFpsCounter(deltaTime);
 
 
   scene.style.transform =
