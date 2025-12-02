@@ -52,13 +52,14 @@
   width: 100px;
   height: 100px;
   background-color: red;
-  border: 1px solid black;
-  outline: 1px solid transparent;
+  /* border: 1px solid black; */
+  /* outline: 1px solid transparent; */
   animation: 2s move ease-in-out infinite;
   animation-play-state: paused;
 
   &.active {
     background-color: palevioletred;
+    border: 5px solid black;
   }
 
   &.clicked {
