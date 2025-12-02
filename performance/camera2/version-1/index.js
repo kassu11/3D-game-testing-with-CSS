@@ -1,25 +1,42 @@
+import { move, rotate } from "./camera.js";
+
 const viewport = document.querySelector("#viewport");
+const scene = document.querySelector("#scene");
 const camera = document.querySelector("#camera");
 const w = window.innerWidth;
 const h = window.innerHeight;
 const FOV = 120;
-const perspective = Math.round(Math.pow(w / 2 * w / 2 + h / 2 * h / 2, 0.5) / Math.tan((FOV / 2) * Math.PI / 180));
-viewport.style.setProperty("--perspective", perspective + "px");
+export const perspective = Math.pow( w/2*w/2 + h/2*h/2, 0.5 ) / Math.tan( (FOV / 2) * Math.PI / 180 );
+viewport.style.perspective = perspective + "px";
 
 const sensitivity = .2;
 const position = { x: 0, y: 0, z: 0 };
 const rotation = { x: 0, y: 0, z: 0 };
 
-const SIZE = 30;
-for (let x = 0; x < SIZE; x++) {
-  for (let z = 0; z < SIZE; z++) {
+for (let i = 0; i < 100; i++) {
+  const div = document.createElement("div");
+  div.classList.add("tile");
+  div.style.transform = `translate3d(200px, 200px, ${-i * 10}px)`;
+  scene.append(div);
+}
+
+for (let x = 0; x < 30; x++) {
+  for (let z = 0; z < 30; z++) {
     const div = document.createElement("div");
     div.classList.add("tile");
-    div.style.transform = `translate3d(${x * (1000 / SIZE)}px, ${x * z * (25 / SIZE)}px, ${z * -(1000 / SIZE)}px) rotateX(90deg)`;
-    div.style.backgroundColor = `rgb(${x / SIZE * 255}, ${Math.sqrt(x, z) / SIZE * 255}, ${z / SIZE * 255})`;
-    camera.append(div);
+    div.style.transform = `translate3d(${x * 100}px, ${x * z * 5 + 400}px, ${z * -100}px) rotateX(90deg)`;
+    scene.append(div);
   }
 }
+
+const floor = document.createElement("div");
+floor.classList.add("tile", "floor");
+floor.style.transform = `translate3d(0px, 500px, 0px) rotateX(90deg)`;
+scene.append(floor);
+
+
+
+
 
 const userKeys = new Set();
 
@@ -58,21 +75,15 @@ const movePlayer = deltaTime => {
   if (userKeys.has("ShiftLeft")) position.y -= moveSpeed;
 }
 
+
 const renderLoop = (currentTime, previousTime) => {
   window.requestAnimationFrame(time => renderLoop(time, currentTime));
 
   const deltaTime = currentTime - previousTime;
   movePlayer(deltaTime);
-  fpsCounter(deltaTime);
-  camera.style.transform = `rotateX(${rotation.y}deg) rotateY(${rotation.x}deg) rotateZ(${rotation.z}deg) translate3d(${-position.x}px, ${position.y}px, ${-position.z}px)`;
-}
 
-const fpsValues = Array(20).fill(0);
-let fpsIndex = 0;
-function fpsCounter(deltaTime) {
-  fpsValues[fpsIndex++ % fpsValues.length] = deltaTime;
-  const sum = fpsValues.reduce((acc, v) => acc + v);
-  fps.textContent = Math.round((1000 * fpsValues.length) / sum);
+  move(position.x, position.y, position.z, scene);
+  rotate(rotation.x, rotation.y, rotation.z, camera);
 }
 
 document.body.onclick = () => !document.pointerLockElement && document.body.requestPointerLock({ unadjustedMovement: true });

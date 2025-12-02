@@ -6,6 +6,15 @@ html {
   box-sizing: border-box;
 }
 
+#fps {
+  position: absolute;
+  color: lime;
+
+  &:before {
+    content: "FPS: ";
+  }
+}
+
 #viewport {
   position: absolute;
   perspective: var(--perspective);
@@ -20,6 +29,25 @@ html {
   }
 }
 
+@keyframes move-camera {
+  0% {
+    transform: rotateX(-19.6deg) rotateY(156.2deg) rotateZ(0deg) translate3d(-219px, 66.54px, 1945.67px);
+  }
+
+  20% {
+    transform: rotateX(-29.4deg) rotateY(204.2deg) rotateZ(0deg) translate3d(-3193.17px, 274.98px, 4388.81px);
+  }
+
+  50% {
+    transform: rotateX(-33.8deg) rotateY(300.2deg) rotateZ(0deg) translate3d(-2822.04px, -1529.1px, 1517.26px)
+  }
+
+  100% {
+    transform: rotateX(-19.6deg) rotateY(156.2deg) rotateZ(0deg) translate3d(-219px, 66.54px, 1945.67px);
+  }
+}
+
+
 #camera {
   position: absolute;
   width: 0px;
@@ -27,16 +55,16 @@ html {
   left: 50%;
   top: 50%;
   translate: 0 0 var(--perspective);
-
+  /* animation: move-camera 2s infinite; */
 }
+
+
 .tile {
   position: absolute;
-  backface-visibility: hidden;
+  /* backface-visibility: hidden; */
   width: 100px;
   height: 100px;
   background-color: red;
-  border: 1px solid black;
-  outline: 1px solid transparent;
 }
 
 .floor {
