@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Camera using three levels of nesting</title>
+  <link rel="stylesheet" href="./index.css">
+</head>
+
+<body class="animate">
+  <div class="info-wrapper">
+    <h1>Camera performance 1</h1>
+    <p>Transforms and rotations are split to two element.</p>
+    <label for="size">Sample size: </label>
+    <input id="size" name="size" type="number" value="30" min="3" max="1000">
+    <br>
+    <label for="border">Border: </label>
+    <input id="border" name="border" type="checkbox">
+    <br>
+    <label for="animate">Animate: </label>
+    <input id="animate" name="animate" type="checkbox" checked>
+    <p id="fps"></p>
+  </div>
+  <div id="viewport">
+    <div id="camera">
+      <div id="scene"></div>
+    </div>
+  </div>
+</body>
+
+</html>
+
+<script src="./index.js" type="module"></script>
