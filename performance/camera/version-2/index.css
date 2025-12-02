@@ -1,26 +1,9 @@
-* {
-  box-sizing: border-box;
+html {
+  color-scheme: dark;
 }
 
-#crosshair {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-  z-index: 100;
-
-  &::before, &::after {
-    content: "";
-    position: absolute;
-    translate: -50% -50%;
-    background-color: black;
-    inline-size: 32px;
-    block-size: 2px;
-  }
-
-  &::after {
-    writing-mode: tb;
-  }
+* {
+  box-sizing: border-box;
 }
 
 #viewport {
@@ -52,32 +35,8 @@
   width: 100px;
   height: 100px;
   background-color: red;
-  /* border: 1px solid black; */
-  /* outline: 1px solid transparent; */
-  animation: 2s move ease-in-out infinite;
-  animation-play-state: paused;
-
-  &.active {
-    background-color: palevioletred;
-    border: 5px solid black;
-  }
-
-  &.clicked {
-    animation-play-state: running;
-    background-color: blue;
-    &.active {
-      background-color: royalblue;
-    }
-  }
-}
-
-@keyframes move {
-  0% {
-    translate: 0 0;
-  }
-  50% {
-    translate: 0 200px;
-  }
+  border: 1px solid black;
+  outline: 1px solid transparent;
 }
 
 .floor {

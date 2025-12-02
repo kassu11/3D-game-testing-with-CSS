@@ -1,25 +1,42 @@
-import { translate } from "./camera.js";
+import { move, rotate } from "./camera.js";
 
 const viewport = document.querySelector("#viewport");
+const scene = document.querySelector("#scene");
 const camera = document.querySelector("#camera");
 const w = window.innerWidth;
 const h = window.innerHeight;
 const FOV = 120;
-const perspective = Math.pow( w/2*w/2 + h/2*h/2, 0.5 ) / Math.tan( (FOV / 2) * Math.PI / 180 );
-viewport.style.setProperty("--perspective", perspective + "px");
+export const perspective = Math.pow( w/2*w/2 + h/2*h/2, 0.5 ) / Math.tan( (FOV / 2) * Math.PI / 180 );
+viewport.style.perspective = perspective + "px";
 
 const sensitivity = .2;
 const position = { x: 0, y: 0, z: 0 };
 const rotation = { x: 0, y: 0, z: 0 };
 
-for (let x = 0; x < 50; x++) {
-  for (let z = 0; z < 50; z++) {
+for (let i = 0; i < 100; i++) {
+  const div = document.createElement("div");
+  div.classList.add("tile");
+  div.style.transform = `translate3d(200px, 200px, ${-i * 10}px)`;
+  scene.append(div);
+}
+
+for (let x = 0; x < 30; x++) {
+  for (let z = 0; z < 30; z++) {
     const div = document.createElement("div");
     div.classList.add("tile");
-    div.style.transform = `translate3d(${x * 100}px, ${x * z * 5}px, ${z * -100}px) rotateX(90deg)`;
-    camera.append(div);
+    div.style.transform = `translate3d(${x * 100}px, ${x * z * 5 + 400}px, ${z * -100}px) rotateX(90deg)`;
+    scene.append(div);
   }
 }
+
+const floor = document.createElement("div");
+floor.classList.add("tile", "floor");
+floor.style.transform = `translate3d(0px, 500px, 0px) rotateX(90deg)`;
+scene.append(floor);
+
+
+
+
 
 const userKeys = new Set();
 
@@ -35,7 +52,6 @@ window.addEventListener("keyup", ({ code }) => userKeys.delete(code));
 window.onblur = () => userKeys.clear();
 
 const movePlayer = deltaTime => {
-  // Movement speed is 250 units in second
   const moveSpeed = 600 * deltaTime / 1000;
 
   if (userKeys.has("KeyW")) {
@@ -57,16 +73,17 @@ const movePlayer = deltaTime => {
 
   if (userKeys.has("Space")) position.y += moveSpeed;
   if (userKeys.has("ShiftLeft")) position.y -= moveSpeed;
-
-  translate(position, rotation, camera);
 }
+
 
 const renderLoop = (currentTime, previousTime) => {
   window.requestAnimationFrame(time => renderLoop(time, currentTime));
 
   const deltaTime = currentTime - previousTime;
   movePlayer(deltaTime);
-  highlightHoveredTile();
+
+  move(position.x, position.y, position.z, scene);
+  rotate(rotation.x, rotation.y, rotation.z, camera);
 }
 
 document.body.onclick = () => !document.pointerLockElement && document.body.requestPointerLock({ unadjustedMovement: true });
@@ -85,25 +102,6 @@ function mouseMovement(event) {
   rotation.x += (event?.movementX ?? 0) * sensitivity;
   rotation.y -= (event?.movementY ?? 0) * sensitivity;
   rotation.y = Math.min(90, Math.max(rotation.y, -90));
-
-
-  translate(position, rotation, camera);
-}
-
-document.addEventListener("click", () => {
-  const activeElement = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
-  activeElement?.classList.toggle("clicked");
-});
-
-let lastActiveTile = null;
-function highlightHoveredTile() {
-  const newActiveTile = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
-  // console.log(newActiveTile);
-  if (lastActiveTile !== newActiveTile) {
-    lastActiveTile?.classList.remove("active");
-    newActiveTile?.classList.add("active");
-    lastActiveTile = newActiveTile;
-  }
 }
 
 window.requestAnimationFrame(previousTime => window.requestAnimationFrame(currentTime => renderLoop(currentTime, previousTime)));

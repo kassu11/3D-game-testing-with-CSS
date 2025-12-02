@@ -1,11 +1,9 @@
-import { translate } from "./camera.js";
-
 const viewport = document.querySelector("#viewport");
 const camera = document.querySelector("#camera");
 const w = window.innerWidth;
 const h = window.innerHeight;
 const FOV = 120;
-const perspective = Math.pow( w/2*w/2 + h/2*h/2, 0.5 ) / Math.tan( (FOV / 2) * Math.PI / 180 );
+const perspective = Math.round(Math.pow( w/2*w/2 + h/2*h/2, 0.5 ) / Math.tan( (FOV / 2) * Math.PI / 180 ));
 viewport.style.setProperty("--perspective", perspective + "px");
 
 const sensitivity = .2;
@@ -35,7 +33,6 @@ window.addEventListener("keyup", ({ code }) => userKeys.delete(code));
 window.onblur = () => userKeys.clear();
 
 const movePlayer = deltaTime => {
-  // Movement speed is 250 units in second
   const moveSpeed = 600 * deltaTime / 1000;
 
   if (userKeys.has("KeyW")) {
@@ -57,8 +54,6 @@ const movePlayer = deltaTime => {
 
   if (userKeys.has("Space")) position.y += moveSpeed;
   if (userKeys.has("ShiftLeft")) position.y -= moveSpeed;
-
-  translate(position, rotation, camera);
 }
 
 const renderLoop = (currentTime, previousTime) => {
@@ -66,7 +61,7 @@ const renderLoop = (currentTime, previousTime) => {
 
   const deltaTime = currentTime - previousTime;
   movePlayer(deltaTime);
-  highlightHoveredTile();
+  camera.style.transform = `rotateX(${rotation.y}deg) rotateY(${rotation.x}deg) rotateZ(${rotation.z}deg) translate3d(${-position.x}px, ${position.y}px, ${-position.z}px)`;
 }
 
 document.body.onclick = () => !document.pointerLockElement && document.body.requestPointerLock({ unadjustedMovement: true });
@@ -85,25 +80,6 @@ function mouseMovement(event) {
   rotation.x += (event?.movementX ?? 0) * sensitivity;
   rotation.y -= (event?.movementY ?? 0) * sensitivity;
   rotation.y = Math.min(90, Math.max(rotation.y, -90));
-
-
-  translate(position, rotation, camera);
-}
-
-document.addEventListener("click", () => {
-  const activeElement = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
-  activeElement?.classList.toggle("clicked");
-});
-
-let lastActiveTile = null;
-function highlightHoveredTile() {
-  const newActiveTile = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
-  // console.log(newActiveTile);
-  if (lastActiveTile !== newActiveTile) {
-    lastActiveTile?.classList.remove("active");
-    newActiveTile?.classList.add("active");
-    lastActiveTile = newActiveTile;
-  }
 }
 
 window.requestAnimationFrame(previousTime => window.requestAnimationFrame(currentTime => renderLoop(currentTime, previousTime)));
