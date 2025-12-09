@@ -229,7 +229,7 @@ const renderLoop = (currentTime, previousTime) => {
   highlightHoveredTile();
 
   yForceElement.textContent = forces.y;
-  posElement.textContent = JSON.stringify(position);
+  posElement.textContent = JSON.stringify(Object.fromEntries(Object.entries(position).map(([key, val]) => ([key, Math.trunc(val)]))));
 
 
   camera.style.transform = `rotateX(${rotation.y}deg) rotateY(${rotation.x}deg) rotateZ(${rotation.z}deg) translate3d(${-position.x}px, ${position.y}px, ${-position.z}px)`;
