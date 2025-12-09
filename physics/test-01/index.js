@@ -96,6 +96,31 @@ function handleMouseMove(event) {
 
 function createTiles(size) {
   camera.textContent = "";
+  const floor = document.createElement("div");
+  floor.classList.add("tile");
+  floor.style.pointerEvents = "none";
+  floor.style.transform = `translate3d(0px, 50px, 200px) rotateX(90deg)`;
+  floor.style.background = `
+repeating-conic-gradient(black 0 25%, transparent 0 50%) 50% / 100px 100px,
+linear-gradient(
+        90deg,
+        rgba(255, 0, 0, 1) 0%,
+        rgba(255, 154, 0, 1) 10%,
+        rgba(208, 222, 33, 1) 20%,
+        rgba(79, 220, 74, 1) 30%,
+        rgba(63, 218, 216, 1) 40%,
+        rgba(47, 201, 226, 1) 50%,
+        rgba(28, 127, 238, 1) 60%,
+        rgba(95, 21, 242, 1) 70%,
+        rgba(186, 12, 248, 1) 80%,
+        rgba(251, 7, 217, 1) 90%,
+        rgba(255, 0, 0, 1) 100%
+    )
+`;
+  floor.style.width = "4000px";
+  floor.style.height = "4000px";
+  camera.append(floor);
+
   for (let x = 0; x < size; x++) {
     for (let z = 0; z < size; z++) {
       const div = document.createElement("div");
@@ -118,9 +143,11 @@ function get3DPosition(el) {
   const values = transform.match(/matrix3d\((.+)\)/)[1].split(',').map(Number);
 
   return {
-    x: values[12], // m13
-    y: values[13], // m14
-    z: values[14]  // m15
+    scaleX: values[0],
+    scaleZ: values[6],
+    x: values[12],
+    y: values[13],
+    z: values[14]
   };
 }
 
