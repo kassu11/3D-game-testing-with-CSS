@@ -5,7 +5,7 @@ const posElement = document.querySelector("#pos");
 
 const userKeys = new Set();
 
-const sensitivity = 0.2;
+const sensitivity = 0.005;
 const position = { x: 50, y: 500, z: 50 };
 const hitbox = { x: 25, y: 100, z: 25 };
 const rotation = { x: 0, y: 0, z: 0 };
@@ -67,20 +67,20 @@ const movePlayer = (deltaTime) => {
   position.y += forces.y;
 
   if (userKeys.has("KeyW")) {
-    position.z += moveSpeed * Math.cos(((rotation.x + 180) * Math.PI) / 180);
-    position.x += moveSpeed * Math.sin((rotation.x * Math.PI) / 180);
+    position.z -= moveSpeed * Math.cos(rotation.y);
+    position.x += moveSpeed * Math.sin(rotation.y);
   }
   if (userKeys.has("KeyA")) {
-    position.z += moveSpeed * Math.cos(((rotation.x + 90) * Math.PI) / 180);
-    position.x += moveSpeed * Math.sin(((rotation.x - 90) * Math.PI) / 180);
+    position.z -= moveSpeed * Math.sin(rotation.y);
+    position.x -= moveSpeed * Math.cos(rotation.y);
   }
   if (userKeys.has("KeyS")) {
-    position.z += moveSpeed * Math.cos((rotation.x * Math.PI) / 180);
-    position.x += moveSpeed * Math.sin(((rotation.x + 180) * Math.PI) / 180);
+    position.z += moveSpeed * Math.cos(rotation.y);
+    position.x -= moveSpeed * Math.sin(rotation.y);
   }
   if (userKeys.has("KeyD")) {
-    position.z += moveSpeed * Math.cos(((rotation.x - 90) * Math.PI) / 180);
-    position.x += moveSpeed * Math.sin(((rotation.x + 90) * Math.PI) / 180);
+    position.z += moveSpeed * Math.sin(rotation.y);
+    position.x += moveSpeed * Math.cos(rotation.y);
   }
 
   // if (userKeys.has("Space")) position.y += moveSpeed;
@@ -88,9 +88,9 @@ const movePlayer = (deltaTime) => {
 };
 
 function handleMouseMove(event) {
-  rotation.x += (event?.movementX ?? 0) * sensitivity;
-  rotation.y -= (event?.movementY ?? 0) * sensitivity;
-  rotation.y = Math.min(90, Math.max(rotation.y, -90));
+  rotation.y += event.movementX * sensitivity;
+  rotation.x -= event.movementY * sensitivity;
+  rotation.x = Math.min(Math.PI / 2, Math.max(rotation.x, -Math.PI / 2));
 }
 
 function createTiles(size) {
@@ -240,7 +240,13 @@ const renderLoop = (currentTime, previousTime) => {
     ),
   );
 
-  camera.style.transform = `rotateX(${rotation.y}deg) rotateY(${rotation.x}deg) rotateZ(${rotation.z}deg) translate3d(${-position.x}px, ${position.y}px, ${-position.z}px)`;
+  // camera.style.transform = `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) translate3d(${-position.x}px, ${position.y}px, ${-position.z}px)`;
+  camera.style.setProperty("--rotation-x", `${rotation.x}rad`);
+  camera.style.setProperty("--rotation-y", `${rotation.y}rad`);
+  camera.style.setProperty("--rotation-z", `${rotation.z}rad`);
+  camera.style.setProperty("--position-x", `${-position.x}px`);
+  camera.style.setProperty("--position-y", `${position.y}px`);
+  camera.style.setProperty("--position-z", `${-position.z}px`);
 };
 
 handleResize();

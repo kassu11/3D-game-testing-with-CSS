@@ -5,12 +5,106 @@ const posElement = document.querySelector("#pos");
 
 const userKeys = new Set();
 
-const sensitivity = 0.2;
+const sensitivity = 0.005;
 const position = { x: 50, y: 500, z: 50 };
 const hitbox = { x: 25, y: 100, z: 25 };
 const rotation = { x: 0, y: 0, z: 0 };
 const forces = { x: 0, y: 0, z: 0 };
 let isOnGroup = false;
+
+const planes = [
+  [{ x: -500, y: 0, z: -500 }, { x: -500, y: 0, z: 1000 }, { x: 1000, y: 0, z: -500 }]
+]
+
+// for (const plane of planes) {
+//   for (const points of plane) {
+//     const width = 
+//   }
+// }
+
+// Basic Vector3 math helpers
+const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
+
+/**
+ * Tests if a player (sphere) intersects a plane.
+ * @param {Object} sphere - { center: {x,y,z}, radius: r }
+ * @param {Object} plane - { normal: {x,y,z}, d: distance_from_origin }
+ * @returns {boolean} - true if intersecting
+ */
+function testSpherePlane(sphere, plane) {
+  // 1. Compute the signed distance of the sphere center from the plane 
+  // Assumes plane.normal is a unit vector (length of 1.0)
+  const dist = dot(sphere.center, plane.normal) - plane.d;
+
+  // 2. Intersection occurs if distance is within the radius 
+  return Math.abs(dist) <= sphere.radius;
+}
+
+
+// Example Usage:
+const player = { center: { x: 1, y: 1, z: 1 }, radius: 2 };
+const ground = { normal: { x: 0, y: 1, z: 0 }, d: 0 }; // Plane at y=0
+
+const tile = {
+  center: { x: 0, y: 0, z: 0 },
+  // Rotation: three unit vectors representing the tile's local X, Y, and Z axes
+  axes: [
+    { x: 1, y: 0, z: 0 }, // Right (width direction)
+    { x: 0, y: 1, z: 0 }, // Up (the "normal")
+    { x: 0, y: 0, z: 1 }  // Forward (height direction)
+  ],
+  extents: { x: 5, z: 10 }, // Half-width and half-height
+  radius: 0.1 // Thickness of the tile
+};
+
+
+function testSphereTile(sphere, tile) {
+  // 1. Calculate vector from tile center to sphere center
+  let d = {
+    x: sphere.center.x - tile.center.x,
+    y: sphere.center.y - tile.center.y,
+    z: sphere.center.z - tile.center.z
+  };
+
+  // 2. Project d onto the tile's axes to find local coordinates
+  // This handles the rotation of the tile [cite: 118, 132]
+  let q = { x: tile.center.x, y: tile.center.y, z: tile.center.z };
+
+  // Check Width (Local X)
+  let dist = dot(d, tile.axes[0]);
+  if (dist > tile.extents.x) dist = tile.extents.x;
+  if (dist < -tile.extents.x) dist = -tile.extents.x;
+  q.x += dist * tile.axes[0].x;
+  q.y += dist * tile.axes[0].y;
+  q.z += dist * tile.axes[0].z;
+
+  // Check Height (Local Z)
+  dist = dot(d, tile.axes[2]);
+  if (dist > tile.extents.z) dist = tile.extents.z;
+  if (dist < -tile.extents.z) dist = -tile.extents.z;
+  q.x += dist * tile.axes[2].x;
+  q.y += dist * tile.axes[2].y;
+  q.z += dist * tile.axes[2].z;
+
+  // q is now the closest point on the tile surface to the sphere 
+
+  // 3. Check if the distance from sphere center to q is within radius
+  let v = {
+    x: q.x - sphere.center.x,
+    y: q.y - sphere.center.y,
+    z: q.z - sphere.center.z
+  };
+
+  return dot(v, v) <= (sphere.radius * sphere.radius);
+}
+
+if (testSpherePlane(player, ground)) {
+    console.log("Player is touching the ground!");
+}
+
+if (testSphereTile(player, tile)) {
+    console.log("Player is touching the tile!");
+}
 
 const fpsValues = Array(20).fill(0);
 let fpsIndex = 0;
@@ -20,6 +114,7 @@ function handleKeydown({ code, repeat }) {
     return;
   }
   if (code === "Space") {
+    userKeys.add(code);
     if (isOnGroup) {
       forces.y += 11;
     }
@@ -38,67 +133,55 @@ function handleKeyup({ code }) {
 
 const movePlayer = (deltaTime) => {
   const moveSpeed = (600 * deltaTime) / 1000;
-  const gravity = (50 * deltaTime) / 1000;
+  // const gravity = (50 * deltaTime) / 1000;
 
-  const active = document.querySelectorAll(".tile");
-  isOnGroup = false;
-  active.forEach((e) => {
-    const data = get3DPosition(e);
-    // Feet are through the floor
-    if (
-      position.x + hitbox.x >= data.x &&
-      position.x - hitbox.x <= data.x + e.clientWidth &&
-      position.z + hitbox.z >= data.z &&
-      position.z - hitbox.z <= data.z + e.clientHeight &&
-      -position.y + hitbox.y >= data.y &&
-      -position.y <= data.y
-    ) {
-      position.y = -data.y + hitbox.y;
-      isOnGroup = true;
-    }
-  });
+  // isOnGroup = false;
+  // if (position.y <= 0) {
+  //   isOnGroup = true;
+  //   position.y = 0;
+  // }
+  //
+  // if (!isOnGroup) {
+  //   forces.y = Math.max(forces.y - gravity, -100);
+  // } else {
+  //   forces.y = Math.max(forces.y, 0);
+  // }
 
-  if (!isOnGroup) {
-    forces.y = Math.max(forces.y - gravity, -100);
-  } else {
-    forces.y = Math.max(forces.y, 0);
-  }
-
-  position.y += forces.y;
+  // position.y += forces.y;
 
   if (userKeys.has("KeyW")) {
-    position.z += moveSpeed * Math.cos(((rotation.x + 180) * Math.PI) / 180);
-    position.x += moveSpeed * Math.sin((rotation.x * Math.PI) / 180);
+    position.z -= moveSpeed * Math.cos(rotation.y);
+    position.x += moveSpeed * Math.sin(rotation.y);
   }
   if (userKeys.has("KeyA")) {
-    position.z += moveSpeed * Math.cos(((rotation.x + 90) * Math.PI) / 180);
-    position.x += moveSpeed * Math.sin(((rotation.x - 90) * Math.PI) / 180);
+    position.z -= moveSpeed * Math.sin(rotation.y);
+    position.x -= moveSpeed * Math.cos(rotation.y);
   }
   if (userKeys.has("KeyS")) {
-    position.z += moveSpeed * Math.cos((rotation.x * Math.PI) / 180);
-    position.x += moveSpeed * Math.sin(((rotation.x + 180) * Math.PI) / 180);
+    position.z += moveSpeed * Math.cos(rotation.y);
+    position.x -= moveSpeed * Math.sin(rotation.y);
   }
   if (userKeys.has("KeyD")) {
-    position.z += moveSpeed * Math.cos(((rotation.x - 90) * Math.PI) / 180);
-    position.x += moveSpeed * Math.sin(((rotation.x + 90) * Math.PI) / 180);
+    position.z += moveSpeed * Math.sin(rotation.y);
+    position.x += moveSpeed * Math.cos(rotation.y);
   }
 
-  // if (userKeys.has("Space")) position.y += moveSpeed;
-  // if (userKeys.has("ShiftLeft")) position.y -= moveSpeed;
+  if (userKeys.has("Space")) position.y += moveSpeed;
+  if (userKeys.has("ShiftLeft")) position.y -= moveSpeed;
 };
 
 function handleMouseMove(event) {
-  rotation.x += (event?.movementX ?? 0) * sensitivity;
-  rotation.y -= (event?.movementY ?? 0) * sensitivity;
-  rotation.y = Math.min(90, Math.max(rotation.y, -90));
+  rotation.y += event.movementX * sensitivity;
+  rotation.x -= event.movementY * sensitivity;
+  rotation.x = Math.min(Math.PI / 2, Math.max(rotation.x, -Math.PI / 2));
 }
 
-function createTiles(size) {
+function createTiles() {
   camera.textContent = "";
   const floor = document.createElement("div");
   floor.classList.add("tile");
   floor.style.pointerEvents = "none";
-  floor.style.transform = `translate3d(0px, 50px, 200px) rotateX(90deg)`;
+  floor.style.transform = `translate3d(-500px, 100px, -500px) rotateX(90deg)`;
   floor.style.background = `
 repeating-conic-gradient(black 0 25%, transparent 0 50%) 50% / 100px 100px,
 linear-gradient(
@@ -120,14 +203,17 @@ linear-gradient(
   floor.style.height = "4000px";
   camera.append(floor);
 
-  for (let x = 0; x < size; x++) {
-    for (let z = 0; z < size; z++) {
-      const div = document.createElement("div");
-      div.classList.add("tile");
-      div.style.transform = `translate3d(${x * (1000 / size)}px, ${x * z * (25 / size)}px, ${z * -(1000 / size)}px) rotateX(90deg)`;
-      div.style.backgroundColor = `rgb(${(x / size) * 255}, ${(Math.sqrt(x, z) / size) * 255}, ${(z / size) * 255})`;
-      camera.append(div);
-    }
+  basic: {
+    const hitbox = document.createElement("div");
+    hitbox.classList.add("tile", "hitbox");
+    hitbox.style.transform = `translate3d(0px, 50px, 0px) rotateX(90deg)`;
+    hitbox.style.background = `
+repeating-conic-gradient(black 0 25%, grey 0 50%) 50% / 100px 100px
+`;
+    hitbox.style.width = "200px";
+    hitbox.style.height = "200px";
+    hitbox.textContent = "Plane 200 x 200";
+    camera.append(hitbox);
   }
 }
 
@@ -240,11 +326,11 @@ const renderLoop = (currentTime, previousTime) => {
     ),
   );
 
-  camera.style.transform = `rotateX(${rotation.y}deg) rotateY(${rotation.x}deg) rotateZ(${rotation.z}deg) translate3d(${-position.x}px, ${position.y}px, ${-position.z}px)`;
+  camera.style.transform = `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) translate3d(${-position.x}px, ${position.y}px, ${-position.z}px)`;
 };
 
 handleResize();
-createTiles(20);
+createTiles();
 
 window.requestAnimationFrame((previousTime) =>
   window.requestAnimationFrame((currentTime) =>
