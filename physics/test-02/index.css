@@ -74,6 +74,8 @@ body {
 
   * {
     transform-style: preserve-3d;
+    position: absolute;
+    transform-origin: 0 0;
   }
 }
 

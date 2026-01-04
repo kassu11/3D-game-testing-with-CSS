@@ -42,20 +42,25 @@ function testSpherePlane(sphere, plane) {
 
 
 // Example Usage:
-const player = { center: { x: 1, y: 1, z: 1 }, radius: 2 };
+const player = { center: position, radius: 100 };
 const ground = { normal: { x: 0, y: 1, z: 0 }, d: 0 }; // Plane at y=0
 
 const tile = {
-  center: { x: 0, y: 0, z: 0 },
+  center: { x: 100, y: 50, z: -234 },
   // Rotation: three unit vectors representing the tile's local X, Y, and Z axes
   axes: [
     { x: 1, y: 0, z: 0 }, // Right (width direction)
     { x: 0, y: 1, z: 0 }, // Up (the "normal")
     { x: 0, y: 0, z: 1 }  // Forward (height direction)
   ],
-  extents: { x: 5, z: 10 }, // Half-width and half-height
+  extents: { x: 500, z: 500 }, // Half-width and half-height
   radius: 0.1 // Thickness of the tile
 };
+
+function addAxis(tile) {
+
+}
+
 
 
 function testSphereTile(sphere, tile) {
@@ -102,9 +107,6 @@ if (testSpherePlane(player, ground)) {
     console.log("Player is touching the ground!");
 }
 
-if (testSphereTile(player, tile)) {
-    console.log("Player is touching the tile!");
-}
 
 const fpsValues = Array(20).fill(0);
 let fpsIndex = 0;
@@ -119,9 +121,9 @@ function handleKeydown({ code, repeat }) {
       forces.y += 11;
     }
   } else if (code === "KeyR") {
-    position.x = 50;
-    position.y = hitbox.y;
-    position.z = 50;
+    position.x = 0;
+    position.y = 0;
+    position.z = 0;
     forces.y = 0;
   } else {
     userKeys.add(code);
@@ -148,6 +150,9 @@ const movePlayer = (deltaTime) => {
   // }
 
   // position.y += forces.y;
+  if (testSphereTile(player, tile)) {
+    console.log("Player is touching the tile!");
+  }
 
   if (userKeys.has("KeyW")) {
     position.z -= moveSpeed * Math.cos(rotation.y);
@@ -176,8 +181,52 @@ function handleMouseMove(event) {
   rotation.x = Math.min(Math.PI / 2, Math.max(rotation.x, -Math.PI / 2));
 }
 
+
+function applyTileToCSS(element, tile) {
+  const { center, axes, extents } = tile;
+
+  // 1. Dimensions (2 * half-extents)
+  element.style.width = `${extents.x * 2}px`;
+  element.style.height = `${extents.z * 2}px`;
+
+  // 2. Build the 4x4 Matrix for matrix3d
+  // Columns are: Right(u0), Up(u1), Forward(u2), Translation(C)
+  const m = [
+    axes[0].x, axes[0].y, axes[0].z, 0, // Column 1 (X basis)
+    axes[1].x, axes[1].y, axes[1].z, 0, // Column 2 (Y basis)
+    axes[2].x, axes[2].y, axes[2].z, 0, // Column 3 (Z basis)
+    center.x,  center.y,  center.z,  1  // Column 4 (Position)
+  ];
+
+  // 3. Apply the transform
+  // Note: Use translate(-50%, -50%) to center the element on its coordinate
+  element.style.transform = `translate3d(${center.x}px, -${center.y}px, ${center.z}px) translate(-50%, -50%) rotateX(${0}rad) rotateY(${0}rad) rotateZ(${0}rad) `;
+}
+
 function createTiles() {
   camera.textContent = "";
+
+  // {
+  //   const div = document.createElement("div");
+  //   applyTileToCSS(div, tile);
+  //   // div.style.width = tile.axes[0].x + "px";
+  //   // div.style.height = tile.axes[2].z + "px";
+  //   div.style.background = "red";
+  //
+  //   camera.append(div);
+  // }
+  {
+    const div = document.createElement("div");
+    div.style.width = "1000px";
+    div.style.height = "1000px";
+
+    // div.style.transform = `translate(50%, 50%) translate3d(${-200}px, -${1100}px, ${-200}px)  rotateX(${5}rad) rotateY(${0}rad) rotateZ(${0}rad) translate(-50%, -50%)`;
+    div.style.transform = `translate(50%, 50%) translate3d(${-200}px, -${1100}px, ${-200}px)  rotateX(${.2}rad) rotateY(${.3}rad) scale(0.5) rotateZ(${.1}rad) translate(-50%, -50%)`;
+    div.style.background = "red";
+
+    camera.append(div);
+  }
+
   const floor = document.createElement("div");
   floor.classList.add("tile");
   floor.style.pointerEvents = "none";
@@ -255,6 +304,63 @@ function handleEnterPointerLock(e) {
   document.body.requestPointerLock({ unadjustedMovement: true });
 }
 
+// par: matrix3d(0.836516, 0.519543  , 0.174117, 0, -0.482964, 0.549004 , 0.682158, 0, 0.25882   , -0.654728, 0.710171 , 0, 1400   , -550    , -234    , 1);
+// chi: matrix3d(0.816811, -0.224749 , 0.531327, 0, -0.11719 , 0.837153 , 0.534268, 0, -0.564878 , -0.498661, 0.657457 , 0, -1800  , -550    , -234    , 1);
+// res: matrix3d(0.929339, -0.0468943, 0.366239, 0, -0.364067, 0.0489149, 0.930087, 0, -0.0615312, -0.997701, 0.0283864, 0, 99.3375, -1633.92, -1088.78, 1);
+
+
+
+// {
+//   function multiplyMatrix4(a, b) {
+//     const out = new Array(16);
+//
+//     for (let row = 0; row < 4; row++) {
+//       for (let col = 0; col < 4; col++) {
+//         out[col * 4 + row] =
+//           a[0 * 4 + row] * b[col * 4 + 0] +
+//             a[1 * 4 + row] * b[col * 4 + 1] +
+//             a[2 * 4 + row] * b[col * 4 + 2] +
+//             a[3 * 4 + row] * b[col * 4 + 3];
+//       }
+//     }
+//
+//     return out;
+//   }
+//
+//
+//
+//   const A = [
+//     0.836516, 0.519543,  0.174117, 0,
+//     -0.482964, 0.549004,  0.682158, 0,
+//     0.25882, -0.654728,  0.710171, 0,
+//     1400,    -550,      -234,      1
+//   ];
+//
+//   const B = [
+//     0.816811, -0.224749, 0.531327, 0,
+//     -0.11719,   0.837153, 0.534268, 0,
+//     -0.564878, -0.498661, 0.657457, 0,
+//     -1800,     -550,     -234,      1
+//   ];
+//
+//   const combined = multiplyMatrix4(A, B);
+//
+//   console.log(combined);
+//   console.log([ 0.929339, -0.0468943, 0.366239, 0, -0.364067, 0.0489149, 0.930087, 0, -0.0615312, -0.997701, 0.0283864, 0, 99.3375, -1633.92, -1088.78, 1 ]);
+// }
+
+
+
+
+// center x y z
+// width: 50
+// height: 100
+// rotation x y z
+
+
+
+
+
 function handleClick(e) {
   const activeElement = document.elementFromPoint(
     window.innerWidth / 2,
@@ -262,6 +368,80 @@ function handleClick(e) {
   );
   if (activeElement !== viewport) {
     activeElement?.classList.toggle("clicked");
+    if (activeElement) {
+      const style = getComputedStyle(activeElement);
+      // Matrix3d
+      //
+      // matrix3d(a1, b1, c1, d1,
+      //          a2, b2, c2, d2,
+      //          a3, b3, c3, d3,
+      //          a4, b4, c4, d4) // Position x y z 1???
+
+      console.log(style.transform);
+
+      const values = style.transform
+      .match(/matrix3d\((.+)\)/)[1]
+      .split(",")
+      .map(Number);
+
+
+      const width = 1000;
+      const height = 1000;
+
+      // Multiply a 3D point by a CSS matrix3d
+      function transformPoint(x, y, z = 0) {
+        return {
+          x: values[0]*x + values[4]*y + values[8]*z  + values[12],
+          y: values[1]*x + values[5]*y + values[9]*z  + values[13],
+          z: values[2]*x + values[6]*y + values[10]*z + values[14]
+        };
+      }
+
+      // Local-space corners of the element
+      const corners = {
+        topLeft:     transformPoint(0, 0),
+        topRight:    transformPoint(width, 0),
+        bottomRight: transformPoint(width, height),
+        bottomLeft:  transformPoint(0, height)
+      };
+
+      const cornerA = document.querySelector("#cornerA") ?? document.createElement("div");
+      cornerA.id = "cornerA";
+      cornerA.style.backgroundColor = "purple";
+      cornerA.style.width = "10px";
+      cornerA.style.height = "10px";
+
+      cornerA.style.transform = `translate(50%, 50%) translate3d(${corners.topLeft.x}px, ${corners.topLeft.y}px, ${corners.topLeft.z}px)  rotateX(${0}rad) rotateY(${0}rad) rotateZ(${0}rad) translate(-50%, -50%) translate(-50%, -50%)`;
+      camera.append(cornerA);
+
+      const cornerB = document.querySelector("#cornerB") ?? document.createElement("div");
+      cornerB.id = "cornerB";
+      cornerB.style.backgroundColor = "orange";
+      cornerB.style.width = "10px";
+      cornerB.style.height = "10px";
+
+      cornerB.style.transform = `translate(50%, 50%) translate3d(${corners.topRight.x}px, ${corners.topRight.y}px, ${corners.topRight.z}px)  rotateX(${0}rad) rotateY(${0}rad) rotateZ(${0}rad) translate(-50%, -50%) translate(-50%, -50%)`;
+      camera.append(cornerB);
+
+      const cornerC = document.querySelector("#cornerC") ?? document.createElement("div");
+      cornerC.id = "cornerC";
+      cornerC.style.backgroundColor = "pink";
+      cornerC.style.width = "10px";
+      cornerC.style.height = "10px";
+
+      cornerC.style.transform = `translate(50%, 50%) translate3d(${corners.bottomLeft.x}px, ${corners.bottomLeft.y}px, ${corners.bottomLeft.z}px)  rotateX(${0}rad) rotateY(${0}rad) rotateZ(${0}rad) translate(-50%, -50%) translate(-50%, -50%)`;
+      camera.append(cornerC);
+
+      const cornerD = document.querySelector("#cornerD") ?? document.createElement("div");
+      cornerD.id = "cornerD";
+      cornerD.style.backgroundColor = "skyblue";
+      cornerD.style.width = "10px";
+      cornerD.style.height = "10px";
+
+      cornerD.style.transform = `translate(50%, 50%) translate3d(${corners.bottomRight.x}px, ${corners.bottomRight.y}px, ${corners.bottomRight.z}px)  rotateX(${0}rad) rotateY(${0}rad) rotateZ(${0}rad) translate(-50%, -50%) translate(-50%, -50%)`;
+      camera.append(cornerD);
+    }
+
   }
 
   handleEnterPointerLock(e);
@@ -327,6 +507,8 @@ const renderLoop = (currentTime, previousTime) => {
   );
 
   camera.style.transform = `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) translate3d(${-position.x}px, ${position.y}px, ${-position.z}px)`;
+
+
 };
 
 handleResize();
