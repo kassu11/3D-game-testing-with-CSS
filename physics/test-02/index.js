@@ -16,14 +16,6 @@ const planes = [
   [{ x: -500, y: 0, z: -500 }, { x: -500, y: 0, z: 1000 }, { x: 1000, y: 0, z: -500 }]
 ]
 
-// for (const plane of planes) {
-//   for (const points of plane) {
-//     const width = 
-//   }
-// }
-
-// Basic Vector3 math helpers
-const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
 
 /**
  * Tests if a player (sphere) intersects a plane.
@@ -57,8 +49,40 @@ const tile = {
   radius: 0.1 // Thickness of the tile
 };
 
-function addAxis(tile) {
+const tiles = [
+  {
+    position: {x: 0, y: 0, z: 0},
+    matrix: [0.475282, 0.0781304, -0.134174, 0, -0.0476873, 0.484655, 0.113296, 0, 0.29552, -0.189796, 0.936293, 0, 86.2027, -881.392, -189.561, 1],
+    width: 1000,
+    height: 1000,
+    desc: "Tile 1000 x 1000"
+  },
+  {
+    position: {x: 0, y: 0, z: 0},
+    matrix: [0.475282, 0.0781304, -0.134174, 0, 0.175244, 0.208497, 0.742171, 0, 0.242684, -0.476909, 0.581947, 0, 86.2027, -881.392, -189.561, 1],
+    width: 500,
+    height: 1000,
+    desc: "Tile 500 x 1000"
+  }
+];
 
+
+
+function processTile(tile) {
+  tile.quads = [
+    transformPoint(0, 0, 0, tile.matrix),
+    transformPoint(tile.width, 0, 0, tile.matrix),
+    transformPoint(tile.width, tile.height, 0, tile.matrix),
+    transformPoint(0, tile.height, 0, tile.matrix),
+  ];
+}
+
+function transformPoint(x, y, z = 0, matrix) {
+  return {
+    x: matrix[0]*x + matrix[4]*y + matrix[8]*z  + matrix[12],
+    y: matrix[1]*x + matrix[5]*y + matrix[9]*z  + matrix[13],
+    z: matrix[2]*x + matrix[6]*y + matrix[10]*z + matrix[14]
+  };
 }
 
 
@@ -133,6 +157,12 @@ function handleKeyup({ code }) {
   userKeys.delete(code);
 }
 
+
+function normalize(v) {
+  const len = Math.hypot(v.x, v.y, v.z);
+  return { x: v.x/len, y: v.y/len, z: v.z/len };
+}
+
 const movePlayer = (deltaTime) => {
   const moveSpeed = (600 * deltaTime) / 1000;
   // const gravity = (50 * deltaTime) / 1000;
@@ -150,9 +180,11 @@ const movePlayer = (deltaTime) => {
   // }
 
   // position.y += forces.y;
-  if (testSphereTile(player, tile)) {
-    console.log("Player is touching the tile!");
-  }
+  // if (testSphereTile(player, tile)) {
+  //   console.log("Player is touching the tile!");
+  // }
+
+  const {x,y,z} = position;
 
   if (userKeys.has("KeyW")) {
     position.z -= moveSpeed * Math.cos(rotation.y);
@@ -173,7 +205,101 @@ const movePlayer = (deltaTime) => {
 
   if (userKeys.has("Space")) position.y += moveSpeed;
   if (userKeys.has("ShiftLeft")) position.y -= moveSpeed;
+
+
+
+  if (position.x === x && position.y === y && position.z === z) {
+    return
+  }
+
+  // TEST
+  tiles.forEach(tile => {
+    const ray = {
+      origin: {x, y, z},
+      dir: normalize({x:  x - position.x, y:  y - position.y, z:  z - position.z})    // direction you're moving
+    };
+    const plane = planeFromQuad(tile.quads[0], tile.quads[1], tile.quads[2]);
+    plane.d -= 25; // player radius
+
+    const hit = intersectRayPlane(ray, plane);
+
+
+    if (hit && pointInQuad(hit, tile.quads)) {
+      if (
+        hit.y >= position.y &&
+          hit.y <= position.y + 200
+      ) {
+        console.log("Collision at", hit);
+      }
+    }
+  });
+  // END TEST
 };
+
+
+function sub(a, b) {
+  return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+}
+
+function dot(a, b) {
+  return a.x*b.x + a.y*b.y + a.z*b.z;
+}
+
+function cross(a, b) {
+  return {
+    x: a.y*b.z - a.z*b.y,
+    y: a.z*b.x - a.x*b.z,
+    z: a.x*b.y - a.y*b.x
+  };
+}
+
+
+function pointInQuad(p, q) {
+  return (
+    pointInTriangle(p, q[0], q[1], q[2]) ||
+    pointInTriangle(p, q[0], q[2], q[3])
+  );
+}
+
+function pointInTriangle(p, a, b, c) {
+  const v0 = sub(c, a);
+  const v1 = sub(b, a);
+  const v2 = sub(p, a);
+
+  const dot00 = dot(v0, v0);
+  const dot01 = dot(v0, v1);
+  const dot02 = dot(v0, v2);
+  const dot11 = dot(v1, v1);
+  const dot12 = dot(v1, v2);
+
+  const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+  const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+  const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+  return u >= 0 && v >= 0 && u + v <= 1;
+}
+
+function intersectRayPlane(ray, plane) {
+  const denom = dot(plane.normal, ray.dir);
+  if (Math.abs(denom) < 1e-6) return null;
+
+  const t = -(dot(plane.normal, ray.origin) + plane.d) / denom;
+  if (t < 0) return null;
+
+  return {
+    x: ray.origin.x + ray.dir.x * t,
+    y: ray.origin.y + ray.dir.y * t,
+    z: ray.origin.z + ray.dir.z * t,
+    t
+  };
+}
+
+function planeFromQuad(a, b, c) {
+  const ab = sub(b, a);
+  const ac = sub(c, a);
+  const normal = normalize(cross(ab, ac));
+  return { normal, d: -dot(normal, a) };
+}
 
 function handleMouseMove(event) {
   rotation.y += event.movementX * sensitivity;
@@ -182,49 +308,21 @@ function handleMouseMove(event) {
 }
 
 
-function applyTileToCSS(element, tile) {
-  const { center, axes, extents } = tile;
-
-  // 1. Dimensions (2 * half-extents)
-  element.style.width = `${extents.x * 2}px`;
-  element.style.height = `${extents.z * 2}px`;
-
-  // 2. Build the 4x4 Matrix for matrix3d
-  // Columns are: Right(u0), Up(u1), Forward(u2), Translation(C)
-  const m = [
-    axes[0].x, axes[0].y, axes[0].z, 0, // Column 1 (X basis)
-    axes[1].x, axes[1].y, axes[1].z, 0, // Column 2 (Y basis)
-    axes[2].x, axes[2].y, axes[2].z, 0, // Column 3 (Z basis)
-    center.x,  center.y,  center.z,  1  // Column 4 (Position)
-  ];
-
-  // 3. Apply the transform
-  // Note: Use translate(-50%, -50%) to center the element on its coordinate
-  element.style.transform = `translate3d(${center.x}px, -${center.y}px, ${center.z}px) translate(-50%, -50%) rotateX(${0}rad) rotateY(${0}rad) rotateZ(${0}rad) `;
-}
-
 function createTiles() {
   camera.textContent = "";
 
-  // {
-  //   const div = document.createElement("div");
-  //   applyTileToCSS(div, tile);
-  //   // div.style.width = tile.axes[0].x + "px";
-  //   // div.style.height = tile.axes[2].z + "px";
-  //   div.style.background = "red";
-  //
-  //   camera.append(div);
-  // }
   {
-    const div = document.createElement("div");
-    div.style.width = "1000px";
-    div.style.height = "1000px";
+    tiles.forEach(tile => {
+      processTile(tile);
 
-    // div.style.transform = `translate(50%, 50%) translate3d(${-200}px, -${1100}px, ${-200}px)  rotateX(${5}rad) rotateY(${0}rad) rotateZ(${0}rad) translate(-50%, -50%)`;
-    div.style.transform = `translate(50%, 50%) translate3d(${-200}px, -${1100}px, ${-200}px)  rotateX(${.2}rad) rotateY(${.3}rad) scale(0.5) rotateZ(${.1}rad) translate(-50%, -50%)`;
-    div.style.background = "red";
-
-    camera.append(div);
+      const div = document.createElement("div");
+      div.style.transform = `matrix3d(${tile.matrix})`;
+      div.style.background = "repeating-conic-gradient(black 0deg, black 25%, transparent 0deg, transparent 50%) 50% center / 100px 100px, linear-gradient(0deg, grey 0%, grey 100%)";
+      div.textContent = tile.desc;
+      div.style.width = tile.width + "px";
+      div.style.height = tile.height + "px";
+      camera.append(div);
+    });
   }
 
   const floor = document.createElement("div");
@@ -251,19 +349,6 @@ linear-gradient(
   floor.style.width = "4000px";
   floor.style.height = "4000px";
   camera.append(floor);
-
-  basic: {
-    const hitbox = document.createElement("div");
-    hitbox.classList.add("tile", "hitbox");
-    hitbox.style.transform = `translate3d(0px, 50px, 0px) rotateX(90deg)`;
-    hitbox.style.background = `
-repeating-conic-gradient(black 0 25%, grey 0 50%) 50% / 100px 100px
-`;
-    hitbox.style.width = "200px";
-    hitbox.style.height = "200px";
-    hitbox.textContent = "Plane 200 x 200";
-    camera.append(hitbox);
-  }
 }
 
 function get3DPosition(el) {
@@ -304,60 +389,6 @@ function handleEnterPointerLock(e) {
   document.body.requestPointerLock({ unadjustedMovement: true });
 }
 
-// par: matrix3d(0.836516, 0.519543  , 0.174117, 0, -0.482964, 0.549004 , 0.682158, 0, 0.25882   , -0.654728, 0.710171 , 0, 1400   , -550    , -234    , 1);
-// chi: matrix3d(0.816811, -0.224749 , 0.531327, 0, -0.11719 , 0.837153 , 0.534268, 0, -0.564878 , -0.498661, 0.657457 , 0, -1800  , -550    , -234    , 1);
-// res: matrix3d(0.929339, -0.0468943, 0.366239, 0, -0.364067, 0.0489149, 0.930087, 0, -0.0615312, -0.997701, 0.0283864, 0, 99.3375, -1633.92, -1088.78, 1);
-
-
-
-// {
-//   function multiplyMatrix4(a, b) {
-//     const out = new Array(16);
-//
-//     for (let row = 0; row < 4; row++) {
-//       for (let col = 0; col < 4; col++) {
-//         out[col * 4 + row] =
-//           a[0 * 4 + row] * b[col * 4 + 0] +
-//             a[1 * 4 + row] * b[col * 4 + 1] +
-//             a[2 * 4 + row] * b[col * 4 + 2] +
-//             a[3 * 4 + row] * b[col * 4 + 3];
-//       }
-//     }
-//
-//     return out;
-//   }
-//
-//
-//
-//   const A = [
-//     0.836516, 0.519543,  0.174117, 0,
-//     -0.482964, 0.549004,  0.682158, 0,
-//     0.25882, -0.654728,  0.710171, 0,
-//     1400,    -550,      -234,      1
-//   ];
-//
-//   const B = [
-//     0.816811, -0.224749, 0.531327, 0,
-//     -0.11719,   0.837153, 0.534268, 0,
-//     -0.564878, -0.498661, 0.657457, 0,
-//     -1800,     -550,     -234,      1
-//   ];
-//
-//   const combined = multiplyMatrix4(A, B);
-//
-//   console.log(combined);
-//   console.log([ 0.929339, -0.0468943, 0.366239, 0, -0.364067, 0.0489149, 0.930087, 0, -0.0615312, -0.997701, 0.0283864, 0, 99.3375, -1633.92, -1088.78, 1 ]);
-// }
-
-
-
-
-// center x y z
-// width: 50
-// height: 100
-// rotation x y z
-
-
 
 
 
@@ -370,39 +401,24 @@ function handleClick(e) {
     activeElement?.classList.toggle("clicked");
     if (activeElement) {
       const style = getComputedStyle(activeElement);
-      // Matrix3d
-      //
-      // matrix3d(a1, b1, c1, d1,
-      //          a2, b2, c2, d2,
-      //          a3, b3, c3, d3,
-      //          a4, b4, c4, d4) // Position x y z 1???
 
       console.log(style.transform);
 
-      const values = style.transform
+      const matrix = style.transform
       .match(/matrix3d\((.+)\)/)[1]
       .split(",")
       .map(Number);
 
 
-      const width = 1000;
-      const height = 1000;
-
-      // Multiply a 3D point by a CSS matrix3d
-      function transformPoint(x, y, z = 0) {
-        return {
-          x: values[0]*x + values[4]*y + values[8]*z  + values[12],
-          y: values[1]*x + values[5]*y + values[9]*z  + values[13],
-          z: values[2]*x + values[6]*y + values[10]*z + values[14]
-        };
-      }
+      const width = parseInt(style.width);
+      const height = parseInt(style.height);;
 
       // Local-space corners of the element
       const corners = {
-        topLeft:     transformPoint(0, 0),
-        topRight:    transformPoint(width, 0),
-        bottomRight: transformPoint(width, height),
-        bottomLeft:  transformPoint(0, height)
+        topLeft:     transformPoint(0, 0, 0, matrix),
+        topRight:    transformPoint(width, 0, 0, matrix),
+        bottomRight: transformPoint(width, height, 0, matrix),
+        bottomLeft:  transformPoint(0, height, 0, matrix)
       };
 
       const cornerA = document.querySelector("#cornerA") ?? document.createElement("div");
