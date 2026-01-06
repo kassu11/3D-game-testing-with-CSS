@@ -35,8 +35,14 @@ body {
   position: absolute;
   pointer-events: none;
   z-index: 1;
-  background-color: hsl(from red h s l / .2);
-  outline: 2px solid white;
+  background-color: hsl(from green h s l / .2);
+  outline: 2px solid green;
+
+  polygon {
+    fill: hsl(from red h s l / .2);
+    stroke: white;
+    stroke-width: 2px;
+  }
 }
 
 #crosshair {

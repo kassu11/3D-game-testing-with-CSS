@@ -3,6 +3,12 @@ const camera = document.querySelector("#camera");
 const yForceElement = document.querySelector("#y-force");
 const posElement = document.querySelector("#pos");
 const hoverRect = document.querySelector("#hoverRect");
+const hoverPolygon = hoverRect.querySelector("polygon");
+
+const cornerA = document.querySelector("#cornerA") ?? document.createElement("div");
+const cornerB = document.querySelector("#cornerB") ?? document.createElement("div");
+const cornerC = document.querySelector("#cornerC") ?? document.createElement("div");
+const cornerD = document.querySelector("#cornerD") ?? document.createElement("div");
 
 const userKeys = new Set();
 
@@ -422,41 +428,6 @@ function handleClick(e) {
         bottomLeft:  transformPoint(0, height, 0, matrix)
       };
 
-      const cornerA = document.querySelector("#cornerA") ?? document.createElement("div");
-      cornerA.id = "cornerA";
-      cornerA.style.backgroundColor = "purple";
-      cornerA.style.width = "10px";
-      cornerA.style.height = "10px";
-
-      cornerA.style.transform = `translate(50%, 50%) translate3d(${corners.topLeft.x}px, ${corners.topLeft.y}px, ${corners.topLeft.z}px)  rotateX(${0}rad) rotateY(${0}rad) rotateZ(${0}rad) translate(-50%, -50%) translate(-50%, -50%)`;
-      camera.append(cornerA);
-
-      const cornerB = document.querySelector("#cornerB") ?? document.createElement("div");
-      cornerB.id = "cornerB";
-      cornerB.style.backgroundColor = "orange";
-      cornerB.style.width = "10px";
-      cornerB.style.height = "10px";
-
-      cornerB.style.transform = `translate(50%, 50%) translate3d(${corners.topRight.x}px, ${corners.topRight.y}px, ${corners.topRight.z}px)  rotateX(${0}rad) rotateY(${0}rad) rotateZ(${0}rad) translate(-50%, -50%) translate(-50%, -50%)`;
-      camera.append(cornerB);
-
-      const cornerC = document.querySelector("#cornerC") ?? document.createElement("div");
-      cornerC.id = "cornerC";
-      cornerC.style.backgroundColor = "pink";
-      cornerC.style.width = "10px";
-      cornerC.style.height = "10px";
-
-      cornerC.style.transform = `translate(50%, 50%) translate3d(${corners.bottomLeft.x}px, ${corners.bottomLeft.y}px, ${corners.bottomLeft.z}px)  rotateX(${0}rad) rotateY(${0}rad) rotateZ(${0}rad) translate(-50%, -50%) translate(-50%, -50%)`;
-      camera.append(cornerC);
-
-      const cornerD = document.querySelector("#cornerD") ?? document.createElement("div");
-      cornerD.id = "cornerD";
-      cornerD.style.backgroundColor = "skyblue";
-      cornerD.style.width = "10px";
-      cornerD.style.height = "10px";
-
-      cornerD.style.transform = `translate(50%, 50%) translate3d(${corners.bottomRight.x}px, ${corners.bottomRight.y}px, ${corners.bottomRight.z}px)  rotateX(${0}rad) rotateY(${0}rad) rotateZ(${0}rad) translate(-50%, -50%) translate(-50%, -50%)`;
-      camera.append(cornerD);
     }
 
   }
@@ -498,19 +469,58 @@ function highlightHoveredTile() {
     lastActiveTile?.classList.remove("active");
     newActiveTile?.classList.add("active");
     lastActiveTile = newActiveTile;
+
+    const matrix = getComputedStyle(lastActiveTile).transform.match(/matrix3d\((.+)\)/)[1].split(",").map(Number);
+    const width2 = parseInt(lastActiveTile.style.width);
+    const height2 = parseInt(lastActiveTile.style.height);
+
+    cornerA.id = "cornerA";
+    cornerA.style.backgroundColor = "purple";
+
+    let {x, y, z} = transformPoint(0, 0, 0, matrix);
+    cornerA.style.transform = `translate(50%, 50%) translate3d(${x}px, ${y}px, ${z}px)  rotateX(${0}rad) rotateY(${0}rad) rotateZ(${0}rad) translate(-50%, -50%) translate(-50%, -50%)`;
+    camera.append(cornerA);
+
+    cornerB.id = "cornerB";
+    cornerB.style.backgroundColor = "orange";
+
+    ({x, y, z} = transformPoint(width2, 0, 0, matrix));
+    cornerB.style.transform = `translate(50%, 50%) translate3d(${x}px, ${y}px, ${z}px)  rotateX(${0}rad) rotateY(${0}rad) rotateZ(${0}rad) translate(-50%, -50%) translate(-50%, -50%)`;
+    camera.append(cornerB);
+
+    cornerC.id = "cornerC";
+    cornerC.style.backgroundColor = "pink";
+
+    ({x, y, z} = transformPoint(width2, height2, 0, matrix));
+    cornerC.style.transform = `translate(50%, 50%) translate3d(${x}px, ${y}px, ${z}px)  rotateX(${0}rad) rotateY(${0}rad) rotateZ(${0}rad) translate(-50%, -50%) translate(-50%, -50%)`;
+    camera.append(cornerC);
+
+    cornerD.id = "cornerD";
+    cornerD.style.backgroundColor = "skyblue";
+
+    ({x, y, z} = transformPoint(0, height2, 0, matrix));
+    cornerD.style.transform = `translate(50%, 50%) translate3d(${x}px, ${y}px, ${z}px)  rotateX(${0}rad) rotateY(${0}rad) rotateZ(${0}rad) translate(-50%, -50%) translate(-50%, -50%)`;
+    camera.append(cornerD);
   }
 
   if (lastActiveTile) {
-    const {width, height, x, y} = newActiveTile.getBoundingClientRect();
+    const {width, height, x, y} = lastActiveTile.getBoundingClientRect();
     hoverRect.style.width = width + "px";
     hoverRect.style.height = height + "px";
     hoverRect.style.left = x + "px";
     hoverRect.style.top = y + "px";
+
+    let {x: x2, y: y2} = cornerA.getBoundingClientRect();
+    let {x: x3, y: y3} = cornerB.getBoundingClientRect();
+    let {x: x4, y: y4} = cornerC.getBoundingClientRect();
+    let {x: x5, y: y5} = cornerD.getBoundingClientRect();
+    hoverPolygon.setAttribute("points", `${x2 - x},${y2 - y} ${x3 - x},${y3 - y} ${x4 - x},${y4 - y} ${x5 - x},${y5 - y}`);
   } else {
     hoverRect.style.width = 0;
     hoverRect.style.height = 0;
     hoverRect.style.left = 0;
     hoverRect.style.top = 0;
+    hoverPolygon.setAttribute("points", "");
   }
 }
 
