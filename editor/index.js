@@ -415,15 +415,70 @@ function handleEnterPointerLock(e) {
 }
 
 
+const exitMovingMove = () => {
+  movingTileMode = false;
+  movingModeController.abort();
+  clearSelection();
+}
 
-let controller = new AbortController();
+const enterMovingMove = () => {
+  movingTileMode = true;
+  movingModeController = new AbortController();
+  removeHoverHighlist();
+
+  const index = Array.from(hoveredElement.parentElement.childNodes).indexOf(hoveredElement);
+  const width = parseInt(hoveredTile.style.width) || 0;
+  const height = parseInt(hoveredTile.style.height) || 0;
+  const transform = hoveredTile.style.transform;
+  let movement = 0;
+
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Escape" || (e.ctrlKey && e.code === "KeyZ")) {
+      hoveredTile.style.height = height + "px";
+      hoveredTile.style.width = width + "px";
+      hoveredTile.style.transform = transform;
+      exitMovingMove();
+    }
+  }, {signal: movingModeController.signal});
+
+  window.addEventListener("mousemove", e => {
+    movement -= e.movementX;
+
+    if (index === 1) {
+      hoveredTile.style.height = Math.abs(movement - height) + "px";
+      if (height - movement < 0) {
+        hoveredTile.style.transform = transform + ` translateY(${height}px)`;
+      } else {
+        hoveredTile.style.transform = transform + ` translateY(${movement}px)`;
+      }
+    } else if (index === 3) {
+      hoveredTile.style.width =  Math.abs(movement - width) + "px";
+      if (width - movement < 0) {
+        hoveredTile.style.transform = transform + ` translateX(${width}px)`;
+      } else {
+        hoveredTile.style.transform = transform + ` translateX(${movement}px)`;
+      }
+    } else if (index === 7) {
+      hoveredTile.style.height = Math.abs(height - movement) + "px";
+      if (height - movement < 0) {
+        hoveredTile.style.transform = transform + ` translateY(${height - movement}px)`;
+      }
+    } else if (index === 5) {
+      hoveredTile.style.width = Math.abs(width - movement) + "px";
+      if (width - movement < 0) {
+        hoveredTile.style.transform = transform + ` translateX(${width - movement}px)`;
+      }
+    }
+  }, {signal: movingModeController.signal});
+}
+
+let movingModeController = new AbortController();
 function handleClick(e) {
   if (movingTileMode) {
-    movingTileMode = false;
-    controller.abort();
-    clearSelection();
+    exitMovingMove();
     return;
   }
+
   if (hoveredTile) {
     hoveredTile?.classList.toggle("clicked");
     const style = getComputedStyle(hoveredTile);
@@ -432,48 +487,8 @@ function handleClick(e) {
   }
 
   if (hoveredElement?.classList.contains("corner")) {
-    movingTileMode = true;
-    controller = new AbortController();
-    removeHoverHighlist();
-
-    const index = Array.from(hoveredElement.parentElement.childNodes).indexOf(hoveredElement);
-    const width = parseInt(hoveredTile.style.width) || 0;
-    const height = parseInt(hoveredTile.style.height) || 0;
-    const transform = hoveredTile.style.transform;
-    let movement = 0;
-
-    window.addEventListener("mousemove", e => {
-      movement -= e.movementX;
-
-      if (index === 1) {
-        hoveredTile.style.height = Math.abs(movement - height) + "px";
-        if (height - movement < 0) {
-          hoveredTile.style.transform = transform + ` translateY(${height}px)`;
-        } else {
-          hoveredTile.style.transform = transform + ` translateY(${movement}px)`;
-        }
-      } else if (index === 3) {
-        hoveredTile.style.width =  Math.abs(movement - width) + "px";
-        if (width - movement < 0) {
-          hoveredTile.style.transform = transform + ` translateX(${width}px)`;
-        } else {
-          hoveredTile.style.transform = transform + ` translateX(${movement}px)`;
-        }
-      } else if (index === 7) {
-        hoveredTile.style.height = Math.abs(height - movement) + "px";
-        if (height - movement < 0) {
-          hoveredTile.style.transform = transform + ` translateY(${height - movement}px)`;
-        }
-      } else if (index === 5) {
-        hoveredTile.style.width = Math.abs(width - movement) + "px";
-        if (width - movement < 0) {
-          hoveredTile.style.transform = transform + ` translateX(${width - movement}px)`;
-        }
-      }
-    }, {signal: controller.signal});
+    enterMovingMove();
   }
-
-
 
   handleEnterPointerLock(e);
 }
@@ -596,7 +611,7 @@ const renderLoop = (currentTime, previousTime) => {
   movePlayer(deltaTime);
   updateFpsCounter(deltaTime);
   updateHoveredTiles();
-  highlightHoveredTile();
+  // highlightHoveredTile();
 
   yForceElement.textContent = forces.y;
   posElement.textContent = JSON.stringify(
