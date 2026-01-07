@@ -42,16 +42,37 @@ body {
     position: relative;
     width: 100%;
     height: 100%;
-    background-color: red;
     opacity: 0;
-    &:nth-child(odd) {
-      pointer-events: none;
-    }
+
 
     &.active {
       opacity: 1;
     }
   }
+
+  &.scale > div {
+    background-color: red;
+
+    &:nth-child(odd) {
+      pointer-events: none;
+    }
+  }
+
+  &.add > div {
+    background-color: lime;
+    &:nth-child(odd) {
+      pointer-events: none;
+    }
+  }
+
+  &.move > div {
+    background-color: deepskyblue;
+
+    &:nth-child(odd) {
+      pointer-events: none;
+    }
+  }
+
 }
 
 #hoverRect {

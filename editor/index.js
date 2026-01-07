@@ -13,6 +13,7 @@ const cornerD = document.querySelector("#cornerD") ?? document.createElement("di
 
 const userKeys = new Set();
 
+let mode = "move";
 const sensitivity = 0.005;
 const position = { x: 50, y: 500, z: 50 };
 const hitbox = { x: 25, y: 100, z: 25 };
@@ -170,6 +171,18 @@ function handleKeydown({ code, repeat }) {
     position.y = 0;
     position.z = 0;
     forces.y = 0;
+  } else if (code === "Digit1") {
+    mode = "move";
+    updateHoverCornerTooltips();
+  } else if (code === "Digit2") {
+    mode = "scale";
+    updateHoverCornerTooltips();
+  } else if (code === "Digit3") {
+    mode = "add";
+    updateHoverCornerTooltips();
+  } else if (code === "Digit4") {
+    mode = "delete";
+    updateHoverCornerTooltips();
   } else {
     userKeys.add(code);
   }
@@ -322,9 +335,9 @@ function planeFromQuad(a, b, c) {
   return { normal, d: -dot(normal, a) };
 }
 
-let movingTileMode = false;
+let editingTileMode = false;
 function handleMouseMove(event) {
-  if (!movingTileMode) {
+  if (!editingTileMode) {
     rotation.y += event.movementX * sensitivity;
     rotation.x -= event.movementY * sensitivity;
     rotation.x = Math.min(Math.PI / 2, Math.max(rotation.x, -Math.PI / 2));
@@ -342,7 +355,8 @@ function createTiles() {
       const div = document.createElement("div");
       div.classList.add("hitbox");
       div.style.transform = `matrix3d(${tile.matrix})`;
-      div.style.background = "repeating-conic-gradient(black 0deg, black 25%, transparent 0deg, transparent 50%) 50% center / 100px 100px, linear-gradient(0deg, grey 0%, grey 100%)";
+      // div.style.background = "repeating-conic-gradient(black 0deg, black 25%, transparent 0deg, transparent 50%) 50% center / 100px 100px, linear-gradient(0deg, grey 0%, grey 100%)";
+      div.style.background = "linear-gradient(to right, #333 , gray)";
       div.textContent = tile.desc;
       div.style.width = tile.width + "px";
       div.style.height = tile.height + "px";
@@ -416,65 +430,108 @@ function handleEnterPointerLock(e) {
 
 
 const exitMovingMove = () => {
-  movingTileMode = false;
-  movingModeController.abort();
+  editingTileMode = false;
+  editingModeController.abort();
+  hoveredTile.style.transform = getComputedStyle(hoveredTile).transform;
   clearSelection();
 }
 
-const enterMovingMove = () => {
-  movingTileMode = true;
-  movingModeController = new AbortController();
-  removeHoverHighlist();
-
+const handleEditingAction = () => {
   const index = Array.from(hoveredElement.parentElement.childNodes).indexOf(hoveredElement);
   const width = parseInt(hoveredTile.style.width) || 0;
   const height = parseInt(hoveredTile.style.height) || 0;
   const transform = hoveredTile.style.transform;
   let movement = 0;
 
-  window.addEventListener("keydown", (e) => {
-    if (e.code === "Escape" || (e.ctrlKey && e.code === "KeyZ")) {
-      hoveredTile.style.height = height + "px";
-      hoveredTile.style.width = width + "px";
-      hoveredTile.style.transform = transform;
-      exitMovingMove();
-    }
-  }, {signal: movingModeController.signal});
-
-  window.addEventListener("mousemove", e => {
-    movement -= e.movementX;
-
-    if (index === 1) {
-      hoveredTile.style.height = Math.abs(movement - height) + "px";
-      if (height - movement < 0) {
-        hoveredTile.style.transform = transform + ` translateY(${height}px)`;
-      } else {
-        hoveredTile.style.transform = transform + ` translateY(${movement}px)`;
-      }
-    } else if (index === 3) {
-      hoveredTile.style.width =  Math.abs(movement - width) + "px";
-      if (width - movement < 0) {
-        hoveredTile.style.transform = transform + ` translateX(${width}px)`;
-      } else {
-        hoveredTile.style.transform = transform + ` translateX(${movement}px)`;
-      }
-    } else if (index === 7) {
-      hoveredTile.style.height = Math.abs(height - movement) + "px";
-      if (height - movement < 0) {
-        hoveredTile.style.transform = transform + ` translateY(${height - movement}px)`;
-      }
+  if (mode === "add") {
+    const clone = hoveredTile.cloneNode();
+    camera.append(clone);
+    if (index === 7) {
+      clone.style.transform = transform + ` translateY(${height}px)`;
     } else if (index === 5) {
-      hoveredTile.style.width = Math.abs(width - movement) + "px";
-      if (width - movement < 0) {
-        hoveredTile.style.transform = transform + ` translateX(${width - movement}px)`;
-      }
+      clone.style.transform = transform + ` translateX(${width}px)`;
+    } else if (index === 1) {
+      clone.style.transform = transform + ` translateY(${-height}px)`;
+    } else if (index === 3) {
+      clone.style.transform = transform + ` translateX(${-width}px)`;
     }
-  }, {signal: movingModeController.signal});
+  } else if (mode === "delete") {
+    hoveredTile.remove();
+    updateHoveredTiles();
+    removeHoverHighlist();
+  } else {
+    editingTileMode = true;
+    editingModeController = new AbortController();
+
+    removeHoverHighlist();
+
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Escape" || (e.ctrlKey && e.code === "KeyZ")) {
+        hoveredTile.style.height = height + "px";
+        hoveredTile.style.width = width + "px";
+        hoveredTile.style.transform = transform;
+        exitMovingMove();
+      }
+    }, {signal: editingModeController.signal});
+
+    window.addEventListener("mousemove", e => {
+      movement -= e.movementX;
+
+      if (mode === "scale") {
+        if (index === 1) {
+          hoveredTile.style.height = Math.abs(movement - height) + "px";
+          if (height - movement < 0) {
+            hoveredTile.style.transform = transform + ` translateY(${height}px)`;
+          } else {
+            hoveredTile.style.transform = transform + ` translateY(${movement}px)`;
+          }
+        } else if (index === 3) {
+          hoveredTile.style.width =  Math.abs(movement - width) + "px";
+          if (width - movement < 0) {
+            hoveredTile.style.transform = transform + ` translateX(${width}px)`;
+          } else {
+            hoveredTile.style.transform = transform + ` translateX(${movement}px)`;
+          }
+        } else if (index === 7) {
+          hoveredTile.style.height = Math.abs(height - movement) + "px";
+          if (height - movement < 0) {
+            hoveredTile.style.transform = transform + ` translateY(${height - movement}px)`;
+          }
+        } else if (index === 5) {
+          hoveredTile.style.width = Math.abs(width - movement) + "px";
+          if (width - movement < 0) {
+            hoveredTile.style.transform = transform + ` translateX(${width - movement}px)`;
+          }
+        }
+      } else if (mode === "move") {
+        if (index === 1) {
+          hoveredTile.style.transform = transform + ` translateY(${movement}px)`;
+        } else if (index === 3) {
+            hoveredTile.style.transform = transform + ` translateX(${movement}px)`;
+        } else if (index === 7) {
+          hoveredTile.style.transform = transform + ` translateY(${-movement}px)`;
+        } else if (index === 5) {
+          hoveredTile.style.transform = transform + ` translateX(${-movement}px)`;
+        }
+      } else if (mode === "add") {
+        if (index === 1) {
+          hoveredTile.style.transform = transform + ` translateY(${movement}px)`;
+        } else if (index === 3) {
+            hoveredTile.style.transform = transform + ` translateX(${movement}px)`;
+        } else if (index === 7) {
+          hoveredTile.style.transform = transform + ` translateY(${-movement}px)`;
+        } else if (index === 5) {
+          hoveredTile.style.transform = transform + ` translateX(${-movement}px)`;
+        }
+      }
+    }, {signal: editingModeController.signal});
+  }
 }
 
-let movingModeController = new AbortController();
+let editingModeController = new AbortController();
 function handleClick(e) {
-  if (movingTileMode) {
+  if (editingTileMode) {
     exitMovingMove();
     return;
   }
@@ -487,7 +544,7 @@ function handleClick(e) {
   }
 
   if (hoveredElement?.classList.contains("corner")) {
-    enterMovingMove();
+    handleEditingAction();
   }
 
   handleEnterPointerLock(e);
@@ -517,7 +574,7 @@ let hoveredElement = null;
 let hoveredTile = null;
 
 function highlightHoveredTile() {
-  if (hoveredTile && !movingTileMode) {
+  if (hoveredTile && !editingTileMode && mode === "delete") {
     const {width, height, x, y} = hoveredTile.getBoundingClientRect();
     hoverRect.style.width = width + "px";
     hoverRect.style.height = height + "px";
@@ -532,8 +589,17 @@ function highlightHoveredTile() {
   }
 }
 
+function updateHoverCornerTooltips() {
+  hoverCornerTooltips.classList.remove("scale", "move", "rotate", "add", "delete");
+  hoverCornerTooltips.classList.add(mode);
+
+  if (hoveredTile) {
+    hoveredTile.append(hoverCornerTooltips);
+  }
+}
+
 function updateHoveredTiles() {
-  if (movingTileMode) {
+  if (editingTileMode) {
     return;
   }
 
@@ -558,7 +624,7 @@ function updateHoveredTiles() {
     hoveredElement = newHoverElement;
     hoveredTile = tile;
 
-    tile.append(hoverCornerTooltips);
+    updateHoverCornerTooltips();
 
     const matrix = getComputedStyle(tile).transform.match(/matrix3d\((.+)\)/)[1].split(",").map(Number);
     const width2 = parseInt(tile.style.width);
@@ -598,7 +664,7 @@ window.addEventListener("keydown", handleKeydown);
 window.addEventListener("keyup", handleKeyup);
 window.addEventListener("resize", handleResize);
 window.addEventListener("blur", handlePointerlockchange);
-window.addEventListener("click", handleClick);
+window.addEventListener("mousedown", handleClick);
 
 document.addEventListener("pointerlockchange", handlePointerlockchange);
 
@@ -611,7 +677,7 @@ const renderLoop = (currentTime, previousTime) => {
   movePlayer(deltaTime);
   updateFpsCounter(deltaTime);
   updateHoveredTiles();
-  // highlightHoveredTile();
+  highlightHoveredTile();
 
   yForceElement.textContent = forces.y;
   posElement.textContent = JSON.stringify(
