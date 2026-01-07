@@ -171,17 +171,18 @@ function handleKeydown({ code, repeat }) {
     position.y = 0;
     position.z = 0;
     forces.y = 0;
-  } else if (code === "Digit1") {
-    mode = "move";
-    updateHoverCornerTooltips();
-  } else if (code === "Digit2") {
-    mode = "scale";
-    updateHoverCornerTooltips();
-  } else if (code === "Digit3") {
-    mode = "add";
-    updateHoverCornerTooltips();
-  } else if (code === "Digit4") {
-    mode = "delete";
+  } else if (code.startsWith("Digit")) {
+    removeHoverHighlist();
+
+    if (code === "Digit1") {
+      mode = "move";
+    } else if (code === "Digit2") {
+      mode = "scale";
+    } else if (code === "Digit3") {
+      mode = "add";
+    } else if (code === "Digit4") {
+      mode = "delete";
+    }
     updateHoverCornerTooltips();
   } else {
     userKeys.add(code);
@@ -465,7 +466,6 @@ const handleEditingAction = () => {
 
     removeHoverHighlist();
 
-
     window.addEventListener("keydown", (e) => {
       if (e.code === "Escape" || (e.ctrlKey && e.code === "KeyZ")) {
         hoveredTile.style.height = height + "px";
@@ -573,7 +573,7 @@ function handleResize() {
 let hoveredElement = null;
 let hoveredTile = null;
 
-function highlightHoveredTile() {
+function updateHighlightHoveredTile() {
   if (hoveredTile && !editingTileMode && mode === "delete") {
     const {width, height, x, y} = hoveredTile.getBoundingClientRect();
     hoverRect.style.width = width + "px";
@@ -586,7 +586,7 @@ function highlightHoveredTile() {
     const {x: x4, y: y4} = cornerC.getBoundingClientRect();
     const {x: x5, y: y5} = cornerD.getBoundingClientRect();
     hoverPolygon.setAttribute("points", `${x2 - x},${y2 - y} ${x3 - x},${y3 - y} ${x4 - x},${y4 - y} ${x5 - x},${y5 - y}`);
-  }
+  } 
 }
 
 function updateHoverCornerTooltips() {
@@ -677,7 +677,7 @@ const renderLoop = (currentTime, previousTime) => {
   movePlayer(deltaTime);
   updateFpsCounter(deltaTime);
   updateHoveredTiles();
-  highlightHoveredTile();
+  updateHighlightHoveredTile();
 
   yForceElement.textContent = forces.y;
   posElement.textContent = JSON.stringify(
@@ -693,8 +693,6 @@ const removeHoverHighlist = () => {
   hoverRect.style.left = 0;
   hoverRect.style.top = 0;
   hoverPolygon.setAttribute("points", "");
-
-  hoverCornerTooltips.remove();
 }
 
 const clearSelection = () => {
