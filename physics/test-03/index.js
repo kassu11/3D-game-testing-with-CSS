@@ -35,7 +35,30 @@ function createHoverToolTips() {
   return parent;
 }
 
+function getIntersection(p1, p2, a, b, c) {
+  const ab = { x: b.x - a.x, y: b.y - a.y, z: b.z - a.z };
+  const ac = { x: c.x - a.x, y: c.y - a.y, z: c.z - a.z };
+  const normal = cross(ab, ac);
 
+  const rayDir = { x: p2.x - p1.x, y: p2.y - p1.y, z: p2.z - p1.z };
+  const denom = dot(normal, rayDir);
+
+  // If denom is near 0, the movement is parallel to the tile (no collision)
+  if (Math.abs(denom) < 1e-6) return null;
+
+  const pa = { x: a.x - p1.x, y: a.y - p1.y, z: a.z - p1.z };
+  const t = dot(normal, pa) / denom;
+
+  // If t is between 0 and 1, the player crossed the plane this frame
+  if (t >= 0 && t <= 1) {
+    return {
+      x: p1.x + rayDir.x * t,
+      y: p1.y + rayDir.y * t,
+      z: p1.z + rayDir.z * t
+    };
+  }
+  return null;
+}
 
 
 /**
@@ -218,46 +241,56 @@ function normalize(v) {
 }
 
 const movePlayer = (deltaTime) => {
-  const moveSpeed = (600 * deltaTime) / 1000;
+  const moveSpeed = (900 * deltaTime) / 1000;
 
-  const movement = {...position};
+  const endPos = { ...position };
 
   if (userKeys.has("KeyW")) {
-    movement.z -= moveSpeed * Math.cos(rotation.y);
-    movement.x += moveSpeed * Math.sin(rotation.y);
+    endPos.z -= moveSpeed * Math.cos(rotation.y);
+    endPos.x += moveSpeed * Math.sin(rotation.y);
   }
   if (userKeys.has("KeyA")) {
-    movement.z -= moveSpeed * Math.sin(rotation.y);
-    movement.x -= moveSpeed * Math.cos(rotation.y);
+    endPos.z -= moveSpeed * Math.sin(rotation.y);
+    endPos.x -= moveSpeed * Math.cos(rotation.y);
   }
   if (userKeys.has("KeyS")) {
-    movement.z += moveSpeed * Math.cos(rotation.y);
-    movement.x -= moveSpeed * Math.sin(rotation.y);
+    endPos.z += moveSpeed * Math.cos(rotation.y);
+    endPos.x -= moveSpeed * Math.sin(rotation.y);
   }
 
   if (userKeys.has("KeyD")) {
-    movement.z += moveSpeed * Math.sin(rotation.y);
-    movement.x += moveSpeed * Math.cos(rotation.y);
+    endPos.z += moveSpeed * Math.sin(rotation.y);
+    endPos.x += moveSpeed * Math.cos(rotation.y);
   }
 
 
   if (userKeys.has("Space")) {
-    movement.y -= moveSpeed;
+    endPos.y -= moveSpeed;
   }
 
   if (userKeys.has("ShiftLeft")) {
-    movement.y += moveSpeed;
+    endPos.y += moveSpeed;
   }
 
-  collision: {
-    for (const tile of tiles) {
-      if (isPlayerIn3DTile(movement, tile.quads, 25)) {
-        // console.log({"Tile name": tile.desc, "quads": tile.quads, "player position": position});
-        break collision;
-      }
+  let collisionOccurred = false;
 
+  for (const tile of tiles) {
+    const intersect = getIntersection(position, endPos, tile.quads[0], tile.quads[1], tile.quads[2]);
+
+    if (intersect) {
+      // The path crossed the plane, now check if the intersection point is inside the tile
+      if (isPointInTriangle3D(intersect, tile.quads[0], tile.quads[1], tile.quads[2]) ||
+        isPointInTriangle3D(intersect, tile.quads[0], tile.quads[2], tile.quads[3])) {
+
+        collisionOccurred = true;
+        // Optional: Slide the player along the wall instead of stopping dead
+        break;
+      }
     }
-    Object.assign(position, movement);
+  }
+
+  if (!collisionOccurred) {
+    Object.assign(position, endPos);
   }
 
 };
