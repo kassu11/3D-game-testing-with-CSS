@@ -15,7 +15,8 @@ const userKeys = new Set();
 
 let mode = "move";
 const sensitivity = 0.005;
-const position = { x: 50, y: 500, z: 50 };
+const position = { x: 50, y: -500, z: 50 };
+const player = { center: position, radius: 100 };
 const hitbox = { x: 25, y: 100, z: 25 };
 const rotation = { x: 0, y: 0, z: 0 };
 const forces = { x: 0, y: 0, z: 0 };
@@ -35,7 +36,82 @@ function createHoverToolTips() {
 }
 
 
-const player = { center: position, radius: 100 };
+
+
+/**
+ * Detects if point P is inside the 3D quadrilateral defined by corners A, B, C, D.
+ * The corners should be provided in counter-clockwise or clockwise order.
+ */
+function isPlayerIn3DTile(p, quads, thickness = 10.0) {
+  const [a, b, c, d] = quads;
+
+  // Fix 1: Check Vertical Distance to the Tile's Plane
+  // We use the first three points to define the plane of the tile.
+  const dist = getDistanceToPlane(p, a, b, c);
+
+  // If the player is too far above or below the tile, it's not a hit.
+  if (dist > thickness) return false;
+
+  // Fix 2: Check Horizontal Boundaries (Point-in-Polygon in 3D)
+  // We split the quad into two triangles: ABC and ACD.
+  // This handles any convex transformation like shearing or rotation.
+  return isPointInTriangle3D(p, a, b, c) || isPointInTriangle3D(p, a, c, d);
+}
+
+function getDistanceToPlane(p, a, b, c) {
+  const ab = { x: b.x - a.x, y: b.y - a.y, z: b.z - a.z };
+  const ac = { x: c.x - a.x, y: c.y - a.y, z: c.z - a.z };
+
+  // Normal vector of the plane [cite: 41, 42]
+  const normal = cross(ab, ac);
+  const mag = Math.sqrt(normal.x**2 + normal.y**2 + normal.z**2);
+
+  // Avoid division by zero for degenerate tiles
+  if (mag < 1e-6) return Infinity; 
+
+  const n = { x: normal.x / mag, y: normal.y / mag, z: normal.z / mag };
+
+  // Distance = |dot(normal, P - A)| [cite: 13, 126]
+  const pa = { x: p.x - a.x, y: p.y - a.y, z: p.z - a.z };
+  return Math.abs(dot(n, pa));
+}
+
+/**
+ * Robust 3D Point-in-Triangle test 
+ */
+function isPointInTriangle3D(p, a, b, c) {
+  // Translate triangle so P is at the origin 
+  const pa = { x: a.x - p.x, y: a.y - p.y, z: a.z - p.z };
+  const pb = { x: b.x - p.x, y: b.y - p.y, z: b.z - p.z };
+  const pc = { x: c.x - p.x, y: c.y - p.y, z: c.z - p.z };
+
+  // Compute normals for triangles formed by P and the edges 
+  const u = cross(pb, pc);
+  const v = cross(pc, pa);
+  const w = cross(pa, pb);
+
+  // If all sub-normals point in the same direction, P is inside the triangle.
+  // Note: We use a small epsilon for floating point robustness[cite: 131].
+  if (dot(u, v) < -0.001) return false;
+  if (dot(u, w) < -0.001) return false;
+
+  return true;
+}
+
+// Helper: Cross Product
+function cross(a, b) {
+  return {
+    x: a.y * b.z - a.z * b.y,
+    y: a.z * b.x - a.x * b.z,
+    z: a.x * b.y - a.y * b.x
+  };
+}
+
+// Helper: Dot Product
+function dot(a, b) {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
 
 const tiles = [
   {
@@ -144,26 +220,45 @@ function normalize(v) {
 const movePlayer = (deltaTime) => {
   const moveSpeed = (600 * deltaTime) / 1000;
 
+  const movement = {...position};
+
   if (userKeys.has("KeyW")) {
-    position.z -= moveSpeed * Math.cos(rotation.y);
-    position.x += moveSpeed * Math.sin(rotation.y);
+    movement.z -= moveSpeed * Math.cos(rotation.y);
+    movement.x += moveSpeed * Math.sin(rotation.y);
   }
   if (userKeys.has("KeyA")) {
-    position.z -= moveSpeed * Math.sin(rotation.y);
-    position.x -= moveSpeed * Math.cos(rotation.y);
+    movement.z -= moveSpeed * Math.sin(rotation.y);
+    movement.x -= moveSpeed * Math.cos(rotation.y);
   }
   if (userKeys.has("KeyS")) {
-    position.z += moveSpeed * Math.cos(rotation.y);
-    position.x -= moveSpeed * Math.sin(rotation.y);
+    movement.z += moveSpeed * Math.cos(rotation.y);
+    movement.x -= moveSpeed * Math.sin(rotation.y);
   }
+
   if (userKeys.has("KeyD")) {
-    position.z += moveSpeed * Math.sin(rotation.y);
-    position.x += moveSpeed * Math.cos(rotation.y);
+    movement.z += moveSpeed * Math.sin(rotation.y);
+    movement.x += moveSpeed * Math.cos(rotation.y);
   }
 
-  if (userKeys.has("Space")) position.y += moveSpeed;
-  if (userKeys.has("ShiftLeft")) position.y -= moveSpeed;
 
+  if (userKeys.has("Space")) {
+    movement.y -= moveSpeed;
+  }
+
+  if (userKeys.has("ShiftLeft")) {
+    movement.y += moveSpeed;
+  }
+
+  collision: {
+    for (const tile of tiles) {
+      if (isPlayerIn3DTile(movement, tile.quads, 25)) {
+        // console.log({"Tile name": tile.desc, "quads": tile.quads, "player position": position});
+        break collision;
+      }
+
+    }
+    Object.assign(position, movement);
+  }
 
 };
 
@@ -454,7 +549,7 @@ document.addEventListener("pointerlockchange", handlePointerlockchange);
 const renderLoop = (currentTime, previousTime) => {
   window.requestAnimationFrame((time) => renderLoop(time, currentTime));
 
-  camera.style.transform = `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) translate3d(${-position.x}px, ${position.y}px, ${-position.z}px)`;
+  camera.style.transform = `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) translate3d(${-position.x}px, ${-position.y}px, ${-position.z}px)`;
 
   const deltaTime = currentTime - previousTime;
   movePlayer(deltaTime);
