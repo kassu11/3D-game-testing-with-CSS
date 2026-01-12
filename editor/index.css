@@ -68,7 +68,7 @@ body {
   &.move > div {
     background-color: deepskyblue;
 
-    &:nth-child(odd) {
+    &:nth-child(odd):not(:nth-child(5)) {
       pointer-events: none;
     }
   }

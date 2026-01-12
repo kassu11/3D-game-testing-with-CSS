@@ -200,24 +200,6 @@ function normalize(v) {
 
 const movePlayer = (deltaTime) => {
   const moveSpeed = (600 * deltaTime) / 1000;
-  // const gravity = (50 * deltaTime) / 1000;
-
-  // isOnGroup = false;
-  // if (position.y <= 0) {
-  //   isOnGroup = true;
-  //   position.y = 0;
-  // }
-  //
-  // if (!isOnGroup) {
-  //   forces.y = Math.max(forces.y - gravity, -100);
-  // } else {
-  //   forces.y = Math.max(forces.y, 0);
-  // }
-
-  // position.y += forces.y;
-  // if (testSphereTile(player, tile)) {
-  //   console.log("Player is touching the tile!");
-  // }
 
   const {x,y,z} = position;
 
@@ -509,6 +491,8 @@ const handleEditingAction = () => {
           hoveredTile.style.transform = transform + ` translateY(${movement}px)`;
         } else if (index === 3) {
             hoveredTile.style.transform = transform + ` translateX(${movement}px)`;
+        } else if (index === 4) {
+            hoveredTile.style.transform = transform + ` translateZ(${movement}px)`;
         } else if (index === 7) {
           hoveredTile.style.transform = transform + ` translateY(${-movement}px)`;
         } else if (index === 5) {
