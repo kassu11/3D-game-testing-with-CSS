@@ -6,6 +6,11 @@ const hoverRect = document.querySelector("#hoverRect");
 const hoverPolygon = hoverRect.querySelector("polygon");
 const hoverCornerTooltips = createHoverToolTips();
 
+const GRAVITY = 0.02;      // Force applied every frame
+const JUMP_FORCE = -12;    // Negative because -Y is Up
+const MAX_SLOPE_COS = 0.707; // cos(45 degrees)
+
+
 const cornerA = document.querySelector("#cornerA") ?? document.createElement("div");
 const cornerB = document.querySelector("#cornerB") ?? document.createElement("div");
 const cornerC = document.querySelector("#cornerC") ?? document.createElement("div");
@@ -160,6 +165,20 @@ const tiles = [
   },
   {
     position: {x: 0, y: 0, z: 0},
+    matrix: [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, -500, -300, -500, 1],
+    width: 1000,
+    height: 1000,
+    desc: "Step 1"
+  },
+  {
+    position: {x: 0, y: 0, z: 0},
+    matrix: [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, -500, -300, -500, 1],
+    width: 1000,
+    height: 1000,
+    desc: "Step 2"
+  },
+  {
+    position: {x: 0, y: 0, z: 0},
     matrix: [0.475282, 0.0781304, -0.134174, 0, -0.0476873, 0.484655, 0.113296, 0, 0.29552, -0.189796, 0.936293, 0, 86.2027, -881.392, -189.561, 1],
     width: 1000,
     height: 1000,
@@ -234,7 +253,8 @@ function handleKeydown({ code, repeat }) {
   if (code === "Space") {
     userKeys.add(code);
     if (isOnGroup) {
-      forces.y += 11;
+      forces.y = JUMP_FORCE; // Trigger the upward force
+      isOnGroup = false;     // Immediately leave the ground
     }
   } else if (code === "KeyR") {
     position.x = 0;
@@ -272,37 +292,40 @@ const PLAYER_RADIUS = 25;
 
 const movePlayer = (deltaTime) => {
   const moveSpeed = (600 * deltaTime) / 1000;
+  
+  // 1. Apply Gravity to Y Force
+  forces.y += GRAVITY * deltaTime;
 
-  // 1. Calculate the intended velocity (the delta)
-  let velocity = { x: 0, y: 0, z: 0 };
-
+  // 2. Calculate Horizontal Velocity (WASD)
+  let velocity = { x: 0, y: forces.y, z: 0 };
+  
   if (userKeys.has("KeyW")) {
     velocity.z -= moveSpeed * Math.cos(rotation.y);
     velocity.x += moveSpeed * Math.sin(rotation.y);
-  }
-  if (userKeys.has("KeyA")) {
-    velocity.z -= moveSpeed * Math.sin(rotation.y);
-    velocity.x -= moveSpeed * Math.cos(rotation.y);
   }
   if (userKeys.has("KeyS")) {
     velocity.z += moveSpeed * Math.cos(rotation.y);
     velocity.x -= moveSpeed * Math.sin(rotation.y);
   }
+  if (userKeys.has("KeyA")) {
+    velocity.z -= moveSpeed * Math.sin(rotation.y);
+    velocity.x -= moveSpeed * Math.cos(rotation.y);
+  }
   if (userKeys.has("KeyD")) {
     velocity.z += moveSpeed * Math.sin(rotation.y);
     velocity.x += moveSpeed * Math.cos(rotation.y);
   }
-  if (userKeys.has("Space")) velocity.y -= moveSpeed;
-  if (userKeys.has("ShiftLeft")) velocity.y += moveSpeed;
 
+  // Calculate next position based on velocity
   let nextPos = {
     x: position.x + velocity.x,
     y: position.y + velocity.y,
     z: position.z + velocity.z
   };
 
+  isOnGroup = false; // Reset grounded state each frame
+
   for (const tile of tiles) {
-    // 1. Get Plane Math
     const ab = { x: tile.quads[1].x - tile.quads[0].x, y: tile.quads[1].y - tile.quads[0].y, z: tile.quads[1].z - tile.quads[0].z };
     const ac = { x: tile.quads[2].x - tile.quads[0].x, y: tile.quads[2].y - tile.quads[0].y, z: tile.quads[2].z - tile.quads[0].z };
     const rawNormal = cross(ab, ac);
@@ -310,27 +333,20 @@ const movePlayer = (deltaTime) => {
     if (mag < 1e-6) continue;
     const normal = { x: rawNormal.x / mag, y: rawNormal.y / mag, z: rawNormal.z / mag };
 
-    // 2. Calculate Signed Distance from player center to the tile plane
-    // Formula: dot(Normal, Point - PointOnPlane)
     const pa = { x: nextPos.x - tile.quads[0].x, y: nextPos.y - tile.quads[0].y, z: nextPos.z - tile.quads[0].z };
     const distToPlane = dot(normal, pa);
 
-    // 3. Check if player is within the "thickness" of the sphere/capsule
     if (Math.abs(distToPlane) < PLAYER_RADIUS) {
-
-      // 4. Projection: Find the closest point on the plane to the player center
       const closestPointOnPlane = {
         x: nextPos.x - normal.x * distToPlane,
         y: nextPos.y - normal.y * distToPlane,
         z: nextPos.z - normal.z * distToPlane
       };
 
-      // 5. Bounds Check: Is that closest point actually inside the tile?
       if (isPointInTriangle3D(closestPointOnPlane, tile.quads[0], tile.quads[1], tile.quads[2]) || 
-        isPointInTriangle3D(closestPointOnPlane, tile.quads[0], tile.quads[2], tile.quads[3])) {
+          isPointInTriangle3D(closestPointOnPlane, tile.quads[0], tile.quads[2], tile.quads[3])) {
 
-        // COLLISION DETECTED
-        // Push the player back by the overlap amount
+        // COLLISION RESOLUTION
         const overlap = PLAYER_RADIUS - Math.abs(distToPlane);
         const pushDir = distToPlane > 0 ? 1 : -1;
 
@@ -338,16 +354,27 @@ const movePlayer = (deltaTime) => {
         nextPos.y += normal.y * overlap * pushDir;
         nextPos.z += normal.z * overlap * pushDir;
 
-        // Optional: Zero out velocity along the normal to prevent jitter
-        const vDotN = dot(velocity, normal);
-        velocity.x -= vDotN * normal.x;
-        velocity.y -= vDotN * normal.y;
-        velocity.z -= vDotN * normal.z;
+        // SLOPE LOGIC
+        // Check if the surface is flat enough to be "ground"
+        // (dot product with Up vector [0, -1, 0])
+        const slopeCos = dot(normal, { x: 0, y: -1, z: 0 });
+
+        if (slopeCos > MAX_SLOPE_COS) {
+          // It's a floor!
+          isOnGroup = true;
+          forces.y = 0; // Stop falling
+        } else if (slopeCos < -MAX_SLOPE_COS) {
+          // It's a ceiling!
+          forces.y = Math.max(0, forces.y); // Stop upward momentum
+        } else {
+          // It's a wall or steep slope - don't set isOnGroup.
+          // Gravity will pull the player down, and the pushDir logic 
+          // above will make them slide along the wall.
+        }
       }
     }
   }
 
-  // Finalize actual position
   position.x = nextPos.x;
   position.y = nextPos.y;
   position.z = nextPos.z;
