@@ -73,25 +73,28 @@ const tile = {
 
 const tiles = [
   {
-    position: {x: 0, y: 0, z: 0},
-    matrix: [0.475282, 0.0781304, -0.134174, 0, -0.0476873, 0.484655, 0.113296, 0, 0.29552, -0.189796, 0.936293, 0, 86.2027, -881.392, -189.561, 1],
-    width: 1000,
-    height: 1000,
-    desc: "Tile 1000 x 1000"
+    "width": 100,
+    "height": 100,
+    "matrix": [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 137, -30, 99, 1],
+    "desc": "Tile 1"
   },
   {
-    position: {x: 0, y: 0, z: 0},
-    matrix: [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, -500, -100, -500, 1],
-    width: 1000,
-    height: 1000,
-    desc: "Tile 1000 x 1000"
+    "width": 100,
+    "height": 100,
+    "matrix": [0.945519, -0.325568, 0, 0, 0, 0, 1, 0, -0.325568, -0.945519, 0, 0, 542.448, -51.4432, 99, 1],
+    "desc": "Tile 2"
   },
   {
-    position: {x: 0, y: 0, z: 0},
-    matrix: [0.475282, 0.0781304, -0.134174, 0, 0.175244, 0.208497, 0.742171, 0, 0.242684, -0.476909, 0.581947, 0, 86.2027, -881.392, -189.561, 1],
-    width: 500,
-    height: 1000,
-    desc: "Tile 500 x 1000"
+    "width": 100,
+    "height": 510,
+    "matrix": [0.945519, -0.325568, 0, 0, -0.0951869, -0.276443, 0.956305, 0, -0.311342, -0.904204, -0.292372, 0, 522.701, -108.794, 375.887, 1],
+    "desc": "Tile 3"
+  },
+  {
+    "width": 100,
+    "height": 510,
+    "matrix": [0.974514, 0.170152, 0.146186, 0, -0.0951869, -0.276443, 0.956305, 0, 0.203129, -0.945848, -0.253202, 0, 969.585, -167.091, 403.516, 1],
+    "desc": "Tile 4"
   }
 ];
 
@@ -178,6 +181,24 @@ function handleKeydown({ code, repeat }) {
     position.y = 0;
     position.z = 0;
     forces.y = 0;
+  } else if (code === "KeyP") {
+    const arr = Array.from(document.querySelectorAll(".tile.hitbox")).map((tile, i) => {
+      console.log(getComputedStyle(tile).transform, tile);
+      return {
+        width: parseInt(tile.style.width),
+        height: parseInt(tile.style.height),
+        matrix: getComputedStyle(tile).transform.match(/matrix3d\((.+)\)/)[1].split(",").map(Number),
+        desc: `Tile ${i + 1}`,
+      };
+    });
+
+    console.log(JSON.stringify(arr, (k, v) => {
+      if (k === "matrix") {
+        return `§[${v.join(", ")}]§`;
+      }
+
+      return v;
+    }, 2).replace(/"§|§"/g, ""));
   } else if (code.startsWith("Digit")) {
     removeHoverHighlist();
 
@@ -345,7 +366,7 @@ function createTiles() {
       processTile(tile);
 
       const div = document.createElement("div");
-      div.classList.add("hitbox");
+      div.classList.add("tile", "hitbox");
       div.style.transform = `matrix3d(${tile.matrix})`;
       // div.style.background = "repeating-conic-gradient(black 0deg, black 25%, transparent 0deg, transparent 50%) 50% center / 100px 100px, linear-gradient(0deg, grey 0%, grey 100%)";
       div.style.background = "linear-gradient(to right, #333 , gray)";
@@ -540,7 +561,6 @@ function handleClick(e) {
   }
 
   if (hoveredTile) {
-    hoveredTile?.classList.toggle("clicked");
     const style = getComputedStyle(hoveredTile);
 
     console.log(style.transform);

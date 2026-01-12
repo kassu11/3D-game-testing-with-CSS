@@ -184,12 +184,4 @@ body {
     filter: brightness(1.25);
     outline: 2px solid white;
   }
-
-  &.clicked {
-    outline: 2px solid red;
-
-    &.active {
-      outline: 2px solid deeppink;
-    }
-  }
 }
