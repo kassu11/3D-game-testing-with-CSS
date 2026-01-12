@@ -163,62 +163,78 @@ const tiles = [
         rgba(255, 0, 0, 1) 100%
     )`
   },
-  {
-    position: {x: 0, y: 0, z: 0},
-    matrix: [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, -500, -300, -500, 1],
-    width: 1000,
-    height: 1000,
-    desc: "Step 1"
+{
+    "width": 100,
+    "height": 100,
+    "matrix": [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 137, -30, 99, 1],
+    "desc": "Tile 1"
   },
   {
-    position: {x: 0, y: 0, z: 0},
-    matrix: [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, -500, -300, -500, 1],
-    width: 1000,
-    height: 1000,
-    desc: "Step 2"
+    "width": 100,
+    "height": 100,
+    "matrix": [0.945519, -0.325568, 0, 0, 0, 0, 1, 0, -0.325568, -0.945519, 0, 0, 542.448, -51.4432, 99, 1],
+    "desc": "Tile 2"
   },
   {
-    position: {x: 0, y: 0, z: 0},
-    matrix: [0.475282, 0.0781304, -0.134174, 0, -0.0476873, 0.484655, 0.113296, 0, 0.29552, -0.189796, 0.936293, 0, 86.2027, -881.392, -189.561, 1],
-    width: 1000,
-    height: 1000,
-    desc: "Tile 1000 x 1000"
+    "width": 100,
+    "height": 510,
+    "matrix": [0.945519, -0.325568, 0, 0, -0.0951869, -0.276443, 0.956305, 0, -0.311342, -0.904204, -0.292372, 0, 522.701, -108.794, 375.887, 1],
+    "desc": "Tile 3"
   },
   {
-    position: {x: 0, y: 0, z: 0},
-    matrix: [0.475282, 0.0781304, -0.134174, 0, 0.175244, 0.208497, 0.742171, 0, 0.242684, -0.476909, 0.581947, 0, 86.2027, -881.392, -189.561, 1],
-    width: 500,
-    height: 1000,
-    desc: "Tile 500 x 1000"
+    "width": 201,
+    "height": 944,
+    "matrix": [0.974514, 0.170152, 0.146186, 0, -0.0951869, -0.276443, 0.956305, 0, 0.203129, -0.945848, -0.253202, 0, 969.585, -167.091, 403.516, 1],
+    "desc": "Tile 4"
   },
   {
-    position: {x: 0, y: 0, z: 0},
-    matrix: [-0.83892, 0.540609, 0.0629068, 0, -0.282535, -0.531371, 0.798635, 0, 0.465176, 0.652217, 0.598518, 0, 840.26, -597.289, 1250.12, 1],
-    width: 500,
-    height: 500,
-    desc: "Tile 500 x 500"
+    "width": 201,
+    "height": 204,
+    "matrix": [0.974514, 0.170152, 0.146186, 0, -0.156133, 0.046556, 0.986639, 0, 0.161072, -0.984318, 0.0719353, 0, 879.729, -428.053, 1306.27, 1],
+    "desc": "Tile 5"
   },
   {
-    position: {x: 0, y: 0, z: 0},
-    matrix: [-0.83892, 0.540609, 0.0629068, 0, -0.282535, -0.531371, 0.798635, 0, 0.465176, 0.652217, 0.598518, 0, 1259.72, -867.593, 1218.67, 1],
-    width: 500,
-    height: 500,
-    desc: "Tile 500 x 500"
+    "width": 653,
+    "height": 204,
+    "matrix": [0.653011, -0.744582, 0.138471, 0, -0.156133, 0.046556, 0.986639, 0, -0.74108, -0.665906, -0.0858529, 0, 453.313, 58.1592, 1215.85, 1],
+    "desc": "Tile 6"
   },
   {
-    position: {x: 0, y: 0, z: 0},
-    matrix: [-0.83892, 0.540609, 0.0629068, 0, -0.282535, -0.531371, 0.798635, 0, 0.465176, 0.652217, 0.598518, 0, 1679.18, -1137.9, 1187.21, 1],
-    width: 500,
-    height: 500,
-    desc: "Tile 500 x 500"
+    "width": 653,
+    "height": 204,
+    "matrix": [0.653011, -0.744582, 0.138471, 0, 0.613505, 0.627271, 0.479733, 0, -0.444059, -0.228317, 0.86642, 0, 328.158, -69.8042, 1117.98, 1],
+    "desc": "Tile 7"
   },
   {
-    position: {x: 0, y: 0, z: 0},
-    matrix: [-0.83892, 0.540609, 0.0629068, 0, -0.282535, -0.531371, 0.798635, 0, 0.465176, 0.652217, 0.598518, 0, 2098.64, -1408.2, 1155.76, 1],
-    width: 500,
-    height: 500,
-    desc: "Tile 500 x 500"
+    "width": 653,
+    "height": 196,
+    "matrix": [0.653011, -0.744582, 0.138471, 0, -0.754347, -0.623197, 0.206364, 0, -0.0673601, -0.239214, -0.968629, 0, 421.462, 67.6566, 1417.12, 1],
+    "desc": "Tile 8"
   },
+  {
+    "width": 201,
+    "height": 204,
+    "matrix": [0.514403, -0.848904, 0.121459, 0, -0.156133, 0.046556, 0.986639, 0, -0.843215, -0.526494, -0.108594, 0, 1075.61, -393.852, 1335.65, 1],
+    "desc": "Tile 9"
+  },
+  {
+    "width": 201,
+    "height": 204,
+    "matrix": [0.974514, 0.170152, 0.146186, 0, 0.121821, -0.948617, 0.292037, 0, 0.188365, -0.266786, -0.94517, 0, 847.878, -418.556, 1507.54, 1],
+    "desc": "Tile 10"
+  },
+  {
+    "width": 201,
+    "height": 944,
+    "matrix": [0.509333, -0.838921, -0.191814, 0, -0.0951869, -0.276443, 0.956305, 0, -0.855289, -0.46882, -0.220656, 0, 1165.46, -132.89, 432.899, 1],
+    "desc": "Tile 11"
+  },
+  {
+    "width": 898,
+    "height": 944,
+    "matrix": [0.664944, -0.780883, 0.101173, 0, -0.0951869, -0.276443, 0.956305, 0, -0.718793, -0.64552, -0.258149, 0, 372.465, 534.142, 312.663, 1],
+    "desc": "Tile 12"
+  }
 ];
 
 
@@ -323,9 +339,11 @@ const movePlayer = (deltaTime) => {
     z: position.z + velocity.z
   };
 
-  isOnGroup = false; // Reset grounded state each frame
+  const MAX_SLOPE_COS = 0.707; // cos(45 degrees)
+  isOnGroup = false;
 
   for (const tile of tiles) {
+    // 1. Calculate Plane Math
     const ab = { x: tile.quads[1].x - tile.quads[0].x, y: tile.quads[1].y - tile.quads[0].y, z: tile.quads[1].z - tile.quads[0].z };
     const ac = { x: tile.quads[2].x - tile.quads[0].x, y: tile.quads[2].y - tile.quads[0].y, z: tile.quads[2].z - tile.quads[0].z };
     const rawNormal = cross(ab, ac);
@@ -333,6 +351,7 @@ const movePlayer = (deltaTime) => {
     if (mag < 1e-6) continue;
     const normal = { x: rawNormal.x / mag, y: rawNormal.y / mag, z: rawNormal.z / mag };
 
+    // 2. Signed Distance
     const pa = { x: nextPos.x - tile.quads[0].x, y: nextPos.y - tile.quads[0].y, z: nextPos.z - tile.quads[0].z };
     const distToPlane = dot(normal, pa);
 
@@ -344,32 +363,33 @@ const movePlayer = (deltaTime) => {
       };
 
       if (isPointInTriangle3D(closestPointOnPlane, tile.quads[0], tile.quads[1], tile.quads[2]) || 
-          isPointInTriangle3D(closestPointOnPlane, tile.quads[0], tile.quads[2], tile.quads[3])) {
+        isPointInTriangle3D(closestPointOnPlane, tile.quads[0], tile.quads[2], tile.quads[3])) {
 
-        // COLLISION RESOLUTION
         const overlap = PLAYER_RADIUS - Math.abs(distToPlane);
         const pushDir = distToPlane > 0 ? 1 : -1;
 
-        nextPos.x += normal.x * overlap * pushDir;
-        nextPos.y += normal.y * overlap * pushDir;
-        nextPos.z += normal.z * overlap * pushDir;
-
-        // SLOPE LOGIC
-        // Check if the surface is flat enough to be "ground"
-        // (dot product with Up vector [0, -1, 0])
+        // 3. Determine Slope "Upwardness" 
+        // In your CSS setup, Y is negative for 'up'. So we check dot with [0, -1, 0]
         const slopeCos = dot(normal, { x: 0, y: -1, z: 0 });
 
         if (slopeCos > MAX_SLOPE_COS) {
-          // It's a floor!
+          // SHALLOW SLOPE: Stick to it
           isOnGroup = true;
-          forces.y = 0; // Stop falling
-        } else if (slopeCos < -MAX_SLOPE_COS) {
-          // It's a ceiling!
-          forces.y = Math.max(0, forces.y); // Stop upward momentum
+          forces.y = 0;
+
+          // Solve: How much Y movement is needed to resolve the overlap?
+          // nextPos.y += overlap / cos(theta)
+          nextPos.y += (overlap * pushDir) / normal.y;
         } else {
-          // It's a wall or steep slope - don't set isOnGroup.
-          // Gravity will pull the player down, and the pushDir logic 
-          // above will make them slide along the wall.
+          // STEEP SLOPE OR WALL: Slide down/along it
+          nextPos.x += normal.x * overlap * pushDir;
+          nextPos.y += normal.y * overlap * pushDir;
+          nextPos.z += normal.z * overlap * pushDir;
+
+          // If it's a ceiling (pointing down), stop upward momentum
+          if (slopeCos < -MAX_SLOPE_COS) {
+            forces.y = Math.max(0, forces.y);
+          }
         }
       }
     }
