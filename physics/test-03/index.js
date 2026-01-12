@@ -241,58 +241,80 @@ function normalize(v) {
 }
 
 const movePlayer = (deltaTime) => {
-  const moveSpeed = (900 * deltaTime) / 1000;
+  const moveSpeed = (600 * deltaTime) / 1000;
 
-  const endPos = { ...position };
+  // 1. Calculate the intended velocity (the delta)
+  let velocity = { x: 0, y: 0, z: 0 };
 
   if (userKeys.has("KeyW")) {
-    endPos.z -= moveSpeed * Math.cos(rotation.y);
-    endPos.x += moveSpeed * Math.sin(rotation.y);
+    velocity.z -= moveSpeed * Math.cos(rotation.y);
+    velocity.x += moveSpeed * Math.sin(rotation.y);
   }
   if (userKeys.has("KeyA")) {
-    endPos.z -= moveSpeed * Math.sin(rotation.y);
-    endPos.x -= moveSpeed * Math.cos(rotation.y);
+    velocity.z -= moveSpeed * Math.sin(rotation.y);
+    velocity.x -= moveSpeed * Math.cos(rotation.y);
   }
   if (userKeys.has("KeyS")) {
-    endPos.z += moveSpeed * Math.cos(rotation.y);
-    endPos.x -= moveSpeed * Math.sin(rotation.y);
+    velocity.z += moveSpeed * Math.cos(rotation.y);
+    velocity.x -= moveSpeed * Math.sin(rotation.y);
   }
-
   if (userKeys.has("KeyD")) {
-    endPos.z += moveSpeed * Math.sin(rotation.y);
-    endPos.x += moveSpeed * Math.cos(rotation.y);
+    velocity.z += moveSpeed * Math.sin(rotation.y);
+    velocity.x += moveSpeed * Math.cos(rotation.y);
   }
+  if (userKeys.has("Space")) velocity.y -= moveSpeed;
+  if (userKeys.has("ShiftLeft")) velocity.y += moveSpeed;
 
+  // 2. Collision & Sliding Logic
+  const startPos = { ...position };
+  const endPos = { 
+    x: startPos.x + velocity.x, 
+    y: startPos.y + velocity.y, 
+    z: startPos.z + velocity.z 
+  };
 
-  if (userKeys.has("Space")) {
-    endPos.y -= moveSpeed;
-  }
-
-  if (userKeys.has("ShiftLeft")) {
-    endPos.y += moveSpeed;
-  }
-
-  let collisionOccurred = false;
+  // Add a small constant for the "skin"
+  const SKIN = 0.05;
 
   for (const tile of tiles) {
-    const intersect = getIntersection(position, endPos, tile.quads[0], tile.quads[1], tile.quads[2]);
+    const intersect = getIntersection(startPos, endPos, tile.quads[0], tile.quads[1], tile.quads[2]);
 
-    if (intersect) {
-      // The path crossed the plane, now check if the intersection point is inside the tile
-      if (isPointInTriangle3D(intersect, tile.quads[0], tile.quads[1], tile.quads[2]) ||
-        isPointInTriangle3D(intersect, tile.quads[0], tile.quads[2], tile.quads[3])) {
+    if (intersect && (isPointInTriangle3D(intersect, tile.quads[0], tile.quads[1], tile.quads[2]) || 
+      isPointInTriangle3D(intersect, tile.quads[0], tile.quads[2], tile.quads[3]))) {
 
-        collisionOccurred = true;
-        // Optional: Slide the player along the wall instead of stopping dead
-        break;
+      // 1. Calculate Plane Normal
+      const ab = { x: tile.quads[1].x - tile.quads[0].x, y: tile.quads[1].y - tile.quads[0].y, z: tile.quads[1].z - tile.quads[0].z };
+      const ac = { x: tile.quads[2].x - tile.quads[0].x, y: tile.quads[2].y - tile.quads[0].y, z: tile.quads[2].z - tile.quads[0].z };
+      const rawNormal = cross(ab, ac);
+      const mag = Math.sqrt(rawNormal.x**2 + rawNormal.y**2 + rawNormal.z**2);
+      let normal = { x: rawNormal.x / mag, y: rawNormal.y / mag, z: rawNormal.z / mag };
+
+      // 2. TWO-DIRECTIONAL FIX: 
+      // If the dot product is positive, we are hitting the back. Flip the normal.
+      let dotProd = dot(velocity, normal);
+      if (dotProd > 0) {
+        normal = { x: -normal.x, y: -normal.y, z: -normal.z };
+        dotProd = dot(velocity, normal); 
       }
+
+      // 3. SKIN CORRECTION:
+      // Adjust the intersection point slightly away from the surface
+      position.x = intersect.x + (normal.x* SKIN);
+      position.y = intersect.y + (normal.y* SKIN);
+      position.z = intersect.z + (normal.z* SKIN);
+
+      // 4. SLIDING:
+      // Apply the deflection to the velocity
+      velocity.x -= dotProd * normal.x;
+      velocity.y -= dotProd * normal.y;
+      velocity.z -= dotProd * normal.z;
     }
   }
 
-  if (!collisionOccurred) {
-    Object.assign(position, endPos);
-  }
-
+  // 4. Finalize position
+  position.x += velocity.x;
+  position.y += velocity.y;
+  position.z += velocity.z;
 };
 
 
