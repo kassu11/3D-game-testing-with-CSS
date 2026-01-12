@@ -81,6 +81,13 @@ const tiles = [
   },
   {
     position: {x: 0, y: 0, z: 0},
+    matrix: [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, -500, -100, -500, 1],
+    width: 1000,
+    height: 1000,
+    desc: "Tile 1000 x 1000"
+  },
+  {
+    position: {x: 0, y: 0, z: 0},
     matrix: [0.475282, 0.0781304, -0.134174, 0, 0.175244, 0.208497, 0.742171, 0, 0.242684, -0.476909, 0.581947, 0, 86.2027, -881.392, -189.561, 1],
     width: 500,
     height: 1000,
@@ -182,6 +189,8 @@ function handleKeydown({ code, repeat }) {
       mode = "add";
     } else if (code === "Digit4") {
       mode = "delete";
+    } else if (code === "Digit5") {
+      mode = "rotate";
     }
     updateHoverCornerTooltips();
   } else {
@@ -507,6 +516,16 @@ const handleEditingAction = () => {
           hoveredTile.style.transform = transform + ` translateY(${-movement}px)`;
         } else if (index === 5) {
           hoveredTile.style.transform = transform + ` translateX(${-movement}px)`;
+        }
+      } else if (mode === "rotate") {
+        if (index === 3) {
+          hoveredTile.style.transform = transform + ` rotateY(${movement}deg)`;
+        } else if (index === 1) {
+            hoveredTile.style.transform = transform + ` rotateX(${-movement}deg)`;
+        } else if (index === 5) {
+          hoveredTile.style.transform = transform + ` translateX(100%) rotateY(${-movement}deg) translateX(-100%)`;
+        } else if (index === 7) {
+          hoveredTile.style.transform = transform + ` translateY(100%) rotateX(${movement}deg) translateY(-100%)`;
         }
       }
     }, {signal: editingModeController.signal});
