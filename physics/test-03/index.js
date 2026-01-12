@@ -240,6 +240,8 @@ function normalize(v) {
   return { x: v.x/len, y: v.y/len, z: v.z/len };
 }
 
+const PLAYER_RADIUS = 25;
+
 const movePlayer = (deltaTime) => {
   const moveSpeed = (600 * deltaTime) / 1000;
 
@@ -265,56 +267,62 @@ const movePlayer = (deltaTime) => {
   if (userKeys.has("Space")) velocity.y -= moveSpeed;
   if (userKeys.has("ShiftLeft")) velocity.y += moveSpeed;
 
-  // 2. Collision & Sliding Logic
-  const startPos = { ...position };
-  const endPos = { 
-    x: startPos.x + velocity.x, 
-    y: startPos.y + velocity.y, 
-    z: startPos.z + velocity.z 
+  let nextPos = {
+    x: position.x + velocity.x,
+    y: position.y + velocity.y,
+    z: position.z + velocity.z
   };
 
-  // Add a small constant for the "skin"
-  const SKIN = 0.05;
-
   for (const tile of tiles) {
-    const intersect = getIntersection(startPos, endPos, tile.quads[0], tile.quads[1], tile.quads[2]);
+    // 1. Get Plane Math
+    const ab = { x: tile.quads[1].x - tile.quads[0].x, y: tile.quads[1].y - tile.quads[0].y, z: tile.quads[1].z - tile.quads[0].z };
+    const ac = { x: tile.quads[2].x - tile.quads[0].x, y: tile.quads[2].y - tile.quads[0].y, z: tile.quads[2].z - tile.quads[0].z };
+    const rawNormal = cross(ab, ac);
+    const mag = Math.sqrt(rawNormal.x**2 + rawNormal.y**2 + rawNormal.z**2);
+    if (mag < 1e-6) continue;
+    const normal = { x: rawNormal.x / mag, y: rawNormal.y / mag, z: rawNormal.z / mag };
 
-    if (intersect && (isPointInTriangle3D(intersect, tile.quads[0], tile.quads[1], tile.quads[2]) || 
-      isPointInTriangle3D(intersect, tile.quads[0], tile.quads[2], tile.quads[3]))) {
+    // 2. Calculate Signed Distance from player center to the tile plane
+    // Formula: dot(Normal, Point - PointOnPlane)
+    const pa = { x: nextPos.x - tile.quads[0].x, y: nextPos.y - tile.quads[0].y, z: nextPos.z - tile.quads[0].z };
+    const distToPlane = dot(normal, pa);
 
-      // 1. Calculate Plane Normal
-      const ab = { x: tile.quads[1].x - tile.quads[0].x, y: tile.quads[1].y - tile.quads[0].y, z: tile.quads[1].z - tile.quads[0].z };
-      const ac = { x: tile.quads[2].x - tile.quads[0].x, y: tile.quads[2].y - tile.quads[0].y, z: tile.quads[2].z - tile.quads[0].z };
-      const rawNormal = cross(ab, ac);
-      const mag = Math.sqrt(rawNormal.x**2 + rawNormal.y**2 + rawNormal.z**2);
-      let normal = { x: rawNormal.x / mag, y: rawNormal.y / mag, z: rawNormal.z / mag };
+    // 3. Check if player is within the "thickness" of the sphere/capsule
+    if (Math.abs(distToPlane) < PLAYER_RADIUS) {
 
-      // 2. TWO-DIRECTIONAL FIX: 
-      // If the dot product is positive, we are hitting the back. Flip the normal.
-      let dotProd = dot(velocity, normal);
-      if (dotProd > 0) {
-        normal = { x: -normal.x, y: -normal.y, z: -normal.z };
-        dotProd = dot(velocity, normal); 
+      // 4. Projection: Find the closest point on the plane to the player center
+      const closestPointOnPlane = {
+        x: nextPos.x - normal.x * distToPlane,
+        y: nextPos.y - normal.y * distToPlane,
+        z: nextPos.z - normal.z * distToPlane
+      };
+
+      // 5. Bounds Check: Is that closest point actually inside the tile?
+      if (isPointInTriangle3D(closestPointOnPlane, tile.quads[0], tile.quads[1], tile.quads[2]) || 
+        isPointInTriangle3D(closestPointOnPlane, tile.quads[0], tile.quads[2], tile.quads[3])) {
+
+        // COLLISION DETECTED
+        // Push the player back by the overlap amount
+        const overlap = PLAYER_RADIUS - Math.abs(distToPlane);
+        const pushDir = distToPlane > 0 ? 1 : -1;
+
+        nextPos.x += normal.x * overlap * pushDir;
+        nextPos.y += normal.y * overlap * pushDir;
+        nextPos.z += normal.z * overlap * pushDir;
+
+        // Optional: Zero out velocity along the normal to prevent jitter
+        const vDotN = dot(velocity, normal);
+        velocity.x -= vDotN * normal.x;
+        velocity.y -= vDotN * normal.y;
+        velocity.z -= vDotN * normal.z;
       }
-
-      // 3. SKIN CORRECTION:
-      // Adjust the intersection point slightly away from the surface
-      position.x = intersect.x + (normal.x* SKIN);
-      position.y = intersect.y + (normal.y* SKIN);
-      position.z = intersect.z + (normal.z* SKIN);
-
-      // 4. SLIDING:
-      // Apply the deflection to the velocity
-      velocity.x -= dotProd * normal.x;
-      velocity.y -= dotProd * normal.y;
-      velocity.z -= dotProd * normal.z;
     }
   }
 
-  // 4. Finalize position
-  position.x += velocity.x;
-  position.y += velocity.y;
-  position.z += velocity.z;
+  // Finalize actual position
+  position.x = nextPos.x;
+  position.y = nextPos.y;
+  position.z = nextPos.z;
 };
 
 
