@@ -266,33 +266,9 @@ const movePlayer = (deltaTime) => {
   if (userKeys.has("ShiftLeft")) position.y -= moveSpeed;
 
 
-
   if (position.x === x && position.y === y && position.z === z) {
     return
   }
-
-  // TEST
-  tiles.forEach(tile => {
-    const ray = {
-      origin: {x, y, z},
-      dir: normalize({x:  x - position.x, y:  y - position.y, z:  z - position.z})    // direction you're moving
-    };
-    const plane = planeFromQuad(tile.quads[0], tile.quads[1], tile.quads[2]);
-    plane.d -= 25; // player radius
-
-    const hit = intersectRayPlane(ray, plane);
-
-
-    if (hit && pointInQuad(hit, tile.quads)) {
-      if (
-        hit.y >= position.y &&
-          hit.y <= position.y + 200
-      ) {
-        console.log("Collision at", hit);
-      }
-    }
-  });
-  // END TEST
 };
 
 
@@ -411,27 +387,6 @@ function createTiles() {
   Array.from(camera.children).forEach(elem => elementToTiles(elem, matrixFromTransform("")))
 }
 
-function get3DPosition(el) {
-  const transform = getComputedStyle(el).transform;
-
-  if (transform === "none") {
-    return { x: 0, y: 0, z: 0 };
-  }
-
-  const values = transform
-    .match(/matrix3d\((.+)\)/)[1]
-    .split(",")
-    .map(Number);
-
-  return {
-    scaleX: values[0],
-    scaleZ: values[6],
-    x: values[12],
-    y: values[13],
-    z: values[14],
-  };
-}
-
 function updateFpsCounter(deltaTime) {
   fpsValues[fpsIndex++ % fpsValues.length] = deltaTime;
   const sum = fpsValues.reduce((acc, v) => acc + v);
@@ -453,68 +408,26 @@ function handleEnterPointerLock(e) {
 const exitMovingMove = () => {
   editingTileMode = false;
   editingModeController.abort();
-  // hoveredTile.style.transform = getComputedStyle(hoveredTile).transform;
+  mergeTransforms(hoveredTile);
   clearSelection();
 }
 
-mergeTransforms(document.querySelector(".input"));
+const toDeg = rad => rad * (180 / Math.PI);
 
 function mergeTransforms(elem) {
-  const matrix = getComputedMatrixFromElem(elem);
-  const v = getComputedMatrixFromElem(elem);
-  const [x, y, z] = matrix.slice(12);
-  console.log(x, y, z);
-  const transform = elem.style.transform;
-  const output = document.querySelector(".output");
-  output.style.width = elem.style.width;
-  output.style.height = elem.style.height;
-
-  const {skewX} = transform.matchAll(/(\w+)\(([^)]+)/g).reduce((acc, [match, key, value]) => {
-    console.log(key, value);
-    acc[key] ??= 0;
-    acc[key] += parseInt(value);
-    return acc;
-  }, {});
-
-  const radX = Math.atan2(-matrix[9], matrix[10]);
-  const radY = Math.asin(matrix[8]);
-  const radZ = Math.atan2(-matrix[4], matrix[0]);
-
-  output.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(${radX}rad) rotateY(${radY}rad) rotateZ(${radZ}rad) skewX(${skewX || 0}deg)`;
-
-
-
-//   // 1. Translation
-//     const tx = v[12], ty = v[13], tz = v[14];
-//
-// // 2. Scale (Magnitude of the basis vectors)
-//     const scaleX = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-//     const scaleY = Math.sqrt(v[4] * v[4] + v[5] * v[5] + v[6] * v[6]);
-//     const scaleZ = Math.sqrt(v[8] * v[8] + v[9] * v[9] + v[10] * v[10]);
-//
-//     // 3. Normalize vectors to extract Rotation and Skew accurately
-//     // This "cleans" the matrix so scale doesn't mess up the trig
-//     const n11 = v[0] / scaleX, n12 = v[1] / scaleX, n13 = v[2] / scaleX;
-//     const n21 = v[4] / scaleY, n22 = v[5] / scaleY, n23 = v[6] / scaleY;
-//     const n31 = v[8] / scaleZ, n32 = v[9] / scaleZ, n33 = v[10] / scaleZ;
-//
-//     // 4. Rotation (Based on your working base logic, but using normalized values)
-//     const radY = Math.asin(n13);
-//     const radX = Math.atan2(-n23, n33);
-//     const radZ = Math.atan2(-n12, n11);
-//
-//     // 5. Skew (Calculated from the normalized dot product)
-//     const skewXRad = Math.atan2(n11 * n21 + n12 * n22 + n13 * n23, n11 * n11 + n12 * n12 + n13 * n13);
-//     const skewYRad = Math.atan2(n21 * n11 + n22 * n12 + n23 * n13, n21 * n21 + n22 * n22 + n23 * n23);
-//
-//   output.style.transform = `translate3d(${tx}px, ${ty}px, ${tz}px) ` +
-//     `rotateX(${radX}rad) rotateY(${radY}rad) rotateZ(${radZ}rad) ` +
-//     `scale3d(${scaleX}, ${scaleY}, ${scaleZ}) ` +
-//     `skew(${skewXRad}rad, ${skewYRad}rad)`;
-
-
-
-  // elem.style.transform = getComputedStyle(elem).transform;
+  const { transform } = getComputedStyle(elem);
+  // There are complex computation that are too hard for me
+  if (elem.style.transform.match(/scale|skew|matrix3d/)) {
+    elem.style.transform = transform;
+  } else {
+    // Merge duplicate translations and rotations
+    const matrix = matrixFromTransform(transform);
+    const [x, y, z] = matrix.slice(12);
+    const radX = Math.atan2(-matrix[9], matrix[10]);
+    const radY = Math.asin(matrix[8]);
+    const radZ = Math.atan2(-matrix[4], matrix[0]);
+    elem.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(${toDeg(radX)}deg) rotateY(${toDeg(radY)}deg) rotateZ(${toDeg(radZ)}deg)`;
+  }
 }
 
 const handleEditingAction = () => {
@@ -522,6 +435,7 @@ const handleEditingAction = () => {
   const width = parseInt(hoveredTile.style.width) || 0;
   const height = parseInt(hoveredTile.style.height) || 0;
   const transform = hoveredTile.style.transform;
+  let movementRaw = 0;
   let movement = 0;
 
   if (mode === "add") {
@@ -556,7 +470,12 @@ const handleEditingAction = () => {
     }, {signal: editingModeController.signal});
 
     window.addEventListener("mousemove", e => {
-      movement -= e.movementX;
+      movementRaw -= e.movementX;
+      if (e.ctrlKey) {
+        movement = Math.round(movementRaw / 15) * 15;
+      } else {
+        movement = movementRaw;
+      }
 
       if (mode === "scale") {
         if (index === 1) {
@@ -633,9 +552,9 @@ function handleClick(e) {
     return;
   }
 
-  if (hoveredTile) {
-    console.log(getComputedMatrixFromElem(hoveredTile));
-  }
+  // if (hoveredTile) {
+  //   console.log(getComputedMatrixFromElem(hoveredTile));
+  // }
 
   if (hoveredElement?.classList.contains("corner")) {
     handleEditingAction();
@@ -720,7 +639,7 @@ function updateHoveredTiles() {
 
     updateHoverCornerTooltips();
 
-    const matrix = getComputedStyle(tile).transform.match(/matrix3d\((.+)\)/)[1].split(",").map(Number);
+    const matrix = getComputedMatrixFromElem(tile);
     const width2 = parseInt(tile.style.width);
     const height2 = parseInt(tile.style.height);
 
@@ -781,16 +700,6 @@ const renderLoop = (currentTime, previousTime) => {
     ),
   );
 };
-
-// function handleMouseUp(e) {
-//   console.log(e);
-//   if (gameMode === "EDIT") {
-//     if (e.button === 2) {
-//       document.exitPointerLock();
-//     }
-//   }
-//
-// }
 
 const removeHoverHighlist = () => {
   hoverRect.style.width = 0;
