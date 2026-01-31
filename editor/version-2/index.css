@@ -1,0 +1,186 @@
+html {
+  color-scheme: dark;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    "Open Sans",
+    "Helvetica Neue",
+    sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+#wrapper {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0px;
+  top: 0px;
+  overflow: hidden;
+}
+
+#hoverToolTip {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  inset: 0px;
+  grid-template-columns: 1fr 1fr 1fr;
+
+  > div {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+
+    &.active {
+      opacity: 1;
+    }
+  }
+
+  &.scale > div {
+    background-color: red;
+
+    &:nth-child(odd) {
+      pointer-events: none;
+    }
+  }
+
+  &.add > div {
+    background-color: lime;
+    &:nth-child(odd) {
+      pointer-events: none;
+    }
+  }
+
+  &.rotate > div {
+    background-color: purple;
+    &:nth-child(odd) {
+      pointer-events: none;
+    }
+  }
+
+  &.move > div {
+    background-color: deepskyblue;
+
+    &:nth-child(odd):not(:nth-child(5)) {
+      pointer-events: none;
+    }
+  }
+}
+
+#hoverRect {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  background-color: hsl(from green h s l / 0.2);
+  outline: 2px solid green;
+
+  polygon {
+    fill: hsl(from red h s l / 0.2);
+    stroke: white;
+    stroke-width: 2px;
+  }
+}
+
+#crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  z-index: 100;
+  pointer-events: none;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    translate: -50% -50%;
+    background-color: black;
+    outline: 2px solid white;
+    inline-size: 32px;
+    block-size: 2px;
+  }
+
+  &::after {
+    writing-mode: tb;
+  }
+}
+
+.info-wrapper {
+  pointer-events: none;
+  z-index: 1;
+  position: absolute;
+  background-color: color-mix(in oklab, black, transparent 20%);
+  padding: 16px;
+  max-width: 70ch;
+}
+
+#fps {
+  color: lime;
+
+  &:before {
+    content: "FPS: ";
+  }
+}
+
+#viewport {
+  position: absolute;
+  perspective: var(--perspective);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  transform-style: preserve-3d;
+
+  * {
+    transform-style: preserve-3d;
+    position: absolute;
+    transform-origin: 0 0;
+    pointer-events: none;
+    top: 0px;
+    left: 0px;
+
+    &.hitbox {
+      pointer-events: all;
+    }
+  }
+}
+
+#camera {
+  position: absolute;
+  width: 0px;
+  height: 0px;
+  left: 50%;
+  top: 50%;
+  translate: 0 0 var(--perspective);
+
+  .animate & {
+    animation: move-camera 5s linear infinite;
+  }
+}
+
+.tile {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  background-color: red;
+  transform-origin: 0 0;
+  box-sizing: border-box;
+
+  &.active {
+    filter: brightness(1.25);
+    outline: 2px solid white;
+  }
+}
