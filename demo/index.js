@@ -9,7 +9,7 @@ const hoverCornerTooltips = createHoverToolTips();
 const GRAVITY = 0.02;      // Force applied every frame
 const JUMP_FORCE = -9;    // Negative because -Y is Up
 const MAX_SLOPE_COS = 0.707; // cos(45 degrees)
-
+const PLAYER_RADIUS = 25;
 
 const cornerA = document.querySelector("#cornerA") ?? document.createElement("div");
 const cornerB = document.querySelector("#cornerB") ?? document.createElement("div");
@@ -41,69 +41,6 @@ function createHoverToolTips() {
   return parent;
 }
 
-function getIntersection(p1, p2, a, b, c) {
-  const ab = { x: b.x - a.x, y: b.y - a.y, z: b.z - a.z };
-  const ac = { x: c.x - a.x, y: c.y - a.y, z: c.z - a.z };
-  const normal = cross(ab, ac);
-
-  const rayDir = { x: p2.x - p1.x, y: p2.y - p1.y, z: p2.z - p1.z };
-  const denom = dot(normal, rayDir);
-
-  // If denom is near 0, the movement is parallel to the tile (no collision)
-  if (Math.abs(denom) < 1e-6) return null;
-
-  const pa = { x: a.x - p1.x, y: a.y - p1.y, z: a.z - p1.z };
-  const t = dot(normal, pa) / denom;
-
-  // If t is between 0 and 1, the player crossed the plane this frame
-  if (t >= 0 && t <= 1) {
-    return {
-      x: p1.x + rayDir.x * t,
-      y: p1.y + rayDir.y * t,
-      z: p1.z + rayDir.z * t
-    };
-  }
-  return null;
-}
-
-
-/**
- * Detects if point P is inside the 3D quadrilateral defined by corners A, B, C, D.
- * The corners should be provided in counter-clockwise or clockwise order.
- */
-function isPlayerIn3DTile(p, quads, thickness = 10.0) {
-  const [a, b, c, d] = quads;
-
-  // Fix 1: Check Vertical Distance to the Tile's Plane
-  // We use the first three points to define the plane of the tile.
-  const dist = getDistanceToPlane(p, a, b, c);
-
-  // If the player is too far above or below the tile, it's not a hit.
-  if (dist > thickness) return false;
-
-  // Fix 2: Check Horizontal Boundaries (Point-in-Polygon in 3D)
-  // We split the quad into two triangles: ABC and ACD.
-  // This handles any convex transformation like shearing or rotation.
-  return isPointInTriangle3D(p, a, b, c) || isPointInTriangle3D(p, a, c, d);
-}
-
-function getDistanceToPlane(p, a, b, c) {
-  const ab = { x: b.x - a.x, y: b.y - a.y, z: b.z - a.z };
-  const ac = { x: c.x - a.x, y: c.y - a.y, z: c.z - a.z };
-
-  // Normal vector of the plane [cite: 41, 42]
-  const normal = cross(ab, ac);
-  const mag = Math.sqrt(normal.x**2 + normal.y**2 + normal.z**2);
-
-  // Avoid division by zero for degenerate tiles
-  if (mag < 1e-6) return Infinity; 
-
-  const n = { x: normal.x / mag, y: normal.y / mag, z: normal.z / mag };
-
-  // Distance = |dot(normal, P - A)| [cite: 13, 126]
-  const pa = { x: p.x - a.x, y: p.y - a.y, z: p.z - a.z };
-  return Math.abs(dot(n, pa));
-}
 
 /**
  * Robust 3D Point-in-Triangle test 
@@ -145,7 +82,7 @@ function dot(a, b) {
 const tiles = [];
 
 
-function processTile(tile) {
+function addQuadsToTile(tile) {
   tile.quads = [
     transformPoint(0,          0,           0, tile.matrix), // topLeft
     transformPoint(tile.width, 0,           0, tile.matrix), // topRight
@@ -161,9 +98,6 @@ function transformPoint(x, y, z = 0, matrix) {
     z: matrix[2]*x + matrix[6]*y + matrix[10]*z + matrix[14]
   };
 }
-
-
-
 
 const fpsValues = Array(20).fill(0);
 let fpsIndex = 0;
@@ -215,13 +149,6 @@ function handleKeyup({ code }) {
   userKeys.delete(code);
 }
 
-
-function normalize(v) {
-  const len = Math.hypot(v.x, v.y, v.z);
-  return { x: v.x/len, y: v.y/len, z: v.z/len };
-}
-
-const PLAYER_RADIUS = 25;
 
 function multiplyMatrix4(a, b) {
   const out = new Array(16);
@@ -280,7 +207,7 @@ function elementToTiles(elem, matrix) {
       matrix: matrix2
     }
 
-    processTile(tile);
+    addQuadsToTile(tile);
     tiles.push(tile);
   }
 
@@ -467,7 +394,11 @@ const handleEditingAction = () => {
       clone.style.transform = transform + ` translateY(${-height}px)`;
     } else if (index === 3) {
       clone.style.transform = transform + ` translateX(${-width}px)`;
+    } else {
+      clone.remove();
     }
+
+    mergeTransforms(clone);
   } else if (mode === "delete") {
     hoveredTile.remove();
     updateHoveredTiles();
@@ -617,7 +548,7 @@ function updateHighlightHoveredTile() {
     const {x: x4, y: y4} = cornerC.getBoundingClientRect();
     const {x: x5, y: y5} = cornerD.getBoundingClientRect();
     hoverPolygon.setAttribute("points", `${x2 - x},${y2 - y} ${x3 - x},${y3 - y} ${x4 - x},${y4 - y} ${x5 - x},${y5 - y}`);
-  } 
+  }
 }
 
 function updateHoverCornerTooltips() {
