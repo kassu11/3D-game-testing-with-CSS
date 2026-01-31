@@ -65,6 +65,13 @@ body {
     }
   }
 
+  &.rotate > div {
+    background-color: purple;
+    &:nth-child(odd) {
+      pointer-events: none;
+    }
+  }
+
   &.move > div {
     background-color: deepskyblue;
 

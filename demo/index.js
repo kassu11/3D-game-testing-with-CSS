@@ -142,102 +142,7 @@ function dot(a, b) {
 }
 
 
-const tiles = [
-  {
-    position: {x: 0, y: 0, z: 0},
-    matrix: [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, -500, 100, -500, 1],
-    width: 4000,
-    height: 4000,
-    desc: "Ground",
-    background: `repeating-conic-gradient(black 0 25%, transparent 0 50%) 50% / 100px 100px, linear-gradient(
-        90deg,
-        rgba(255, 0, 0, 1) 0%,
-        rgba(255, 154, 0, 1) 10%,
-        rgba(208, 222, 33, 1) 20%,
-        rgba(79, 220, 74, 1) 30%,
-        rgba(63, 218, 216, 1) 40%,
-        rgba(47, 201, 226, 1) 50%,
-        rgba(28, 127, 238, 1) 60%,
-        rgba(95, 21, 242, 1) 70%,
-        rgba(186, 12, 248, 1) 80%,
-        rgba(251, 7, 217, 1) 90%,
-        rgba(255, 0, 0, 1) 100%
-    )`
-  },
-{
-    "width": 100,
-    "height": 100,
-    "matrix": [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 137, -30, 99, 1],
-    "desc": "Tile 1"
-  },
-  {
-    "width": 100,
-    "height": 100,
-    "matrix": [0.945519, -0.325568, 0, 0, 0, 0, 1, 0, -0.325568, -0.945519, 0, 0, 542.448, -51.4432, 99, 1],
-    "desc": "Tile 2"
-  },
-  {
-    "width": 100,
-    "height": 510,
-    "matrix": [0.945519, -0.325568, 0, 0, -0.0951869, -0.276443, 0.956305, 0, -0.311342, -0.904204, -0.292372, 0, 522.701, -108.794, 375.887, 1],
-    "desc": "Tile 3"
-  },
-  {
-    "width": 201,
-    "height": 944,
-    "matrix": [0.974514, 0.170152, 0.146186, 0, -0.0951869, -0.276443, 0.956305, 0, 0.203129, -0.945848, -0.253202, 0, 969.585, -167.091, 403.516, 1],
-    "desc": "Tile 4"
-  },
-  {
-    "width": 201,
-    "height": 204,
-    "matrix": [0.974514, 0.170152, 0.146186, 0, -0.156133, 0.046556, 0.986639, 0, 0.161072, -0.984318, 0.0719353, 0, 879.729, -428.053, 1306.27, 1],
-    "desc": "Tile 5"
-  },
-  {
-    "width": 653,
-    "height": 204,
-    "matrix": [0.653011, -0.744582, 0.138471, 0, -0.156133, 0.046556, 0.986639, 0, -0.74108, -0.665906, -0.0858529, 0, 453.313, 58.1592, 1215.85, 1],
-    "desc": "Tile 6"
-  },
-  {
-    "width": 653,
-    "height": 204,
-    "matrix": [0.653011, -0.744582, 0.138471, 0, 0.613505, 0.627271, 0.479733, 0, -0.444059, -0.228317, 0.86642, 0, 328.158, -69.8042, 1117.98, 1],
-    "desc": "Tile 7"
-  },
-  {
-    "width": 653,
-    "height": 196,
-    "matrix": [0.653011, -0.744582, 0.138471, 0, -0.754347, -0.623197, 0.206364, 0, -0.0673601, -0.239214, -0.968629, 0, 421.462, 67.6566, 1417.12, 1],
-    "desc": "Tile 8"
-  },
-  {
-    "width": 201,
-    "height": 204,
-    "matrix": [0.514403, -0.848904, 0.121459, 0, -0.156133, 0.046556, 0.986639, 0, -0.843215, -0.526494, -0.108594, 0, 1075.61, -393.852, 1335.65, 1],
-    "desc": "Tile 9"
-  },
-  {
-    "width": 201,
-    "height": 204,
-    "matrix": [0.974514, 0.170152, 0.146186, 0, 0.121821, -0.948617, 0.292037, 0, 0.188365, -0.266786, -0.94517, 0, 847.878, -418.556, 1507.54, 1],
-    "desc": "Tile 10"
-  },
-  {
-    "width": 201,
-    "height": 944,
-    "matrix": [0.509333, -0.838921, -0.191814, 0, -0.0951869, -0.276443, 0.956305, 0, -0.855289, -0.46882, -0.220656, 0, 1165.46, -132.89, 432.899, 1],
-    "desc": "Tile 11"
-  },
-  {
-    "width": 898,
-    "height": 944,
-    "matrix": [0.664944, -0.780883, 0.101173, 0, -0.0951869, -0.276443, 0.956305, 0, -0.718793, -0.64552, -0.258149, 0, 372.465, 534.142, 312.663, 1],
-    "desc": "Tile 12"
-  }
-];
-
+const tiles = [];
 
 
 function processTile(tile) {
@@ -278,9 +183,16 @@ function handleKeydown({ code, repeat }) {
     position.y = 0;
     position.z = 0;
     forces.y = 0;
+  } else if (code === "KeyP") {
+    camera.querySelectorAll(":scope > :not(.tile), .tile > :not(.tile)").forEach(elem => elem.remove());
+    console.log(camera.innerHTML);
   } else if (code === "KeyH") {
     gameMode = gameMode === "EDIT" ? "SURVIVAL" : "EDIT";
-    clearSelection()
+    clearSelection();
+    forces.y = 0;
+    console.log(tiles);
+    tiles.length = 0;
+    createTiles();
   } else if (code.startsWith("Digit")) {
     removeHoverHighlist();
 
@@ -292,6 +204,8 @@ function handleKeydown({ code, repeat }) {
       mode = "add";
     } else if (code === "Digit4") {
       mode = "delete";
+    } else if (code === "Digit5") {
+      mode = "rotate";
     }
     updateHoverCornerTooltips();
   } else {
@@ -309,6 +223,72 @@ function normalize(v) {
 }
 
 const PLAYER_RADIUS = 25;
+
+function multiplyMatrix4(a, b) {
+  const out = new Array(16);
+
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 4; col++) {
+      out[col * 4 + row] =
+        a[0 * 4 + row] * b[col * 4 + 0] +
+          a[1 * 4 + row] * b[col * 4 + 1] +
+          a[2 * 4 + row] * b[col * 4 + 2] +
+          a[3 * 4 + row] * b[col * 4 + 3];
+    }
+  }
+
+
+  return out;
+}
+
+function createTiles() {
+  Array.from(camera.children).forEach(elem => elementToTiles(elem, matrixFromTransform("")))
+}
+
+function getComputedMatrixFromElem(elem) {
+  const { transform } = getComputedStyle(elem);
+  return matrixFromTransform(transform);
+}
+
+function matrixFromTransform(transform) {
+  if (transform.startsWith("matrix3d")) {
+    return transform.substring(9).split(",").map(parseFloat);
+  } else if (transform.startsWith("matrix(")) {
+    const [a, b, c, d, tx, ty] = transform.substring(7).split(",").map(parseFloat);
+    return [
+      1,  0,  0, 0,
+      0,  1,  0, 0,
+      0,  0,  1, 0,
+      tx, ty, 0, 1,
+    ];
+  }
+
+  return [
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1,
+  ]
+}
+
+function elementToTiles(elem, matrix) {
+  const {width, height, transform} = getComputedStyle(elem);
+  const matrix2 = multiplyMatrix4(matrix, matrixFromTransform(transform));
+  if (elem.classList.contains("tile")) {
+    const tile = {
+      width: parseInt(width),
+      height: parseInt(height),
+      matrix: matrix2
+    }
+
+    processTile(tile);
+    tiles.push(tile);
+  }
+
+  if (elem.children.length) {
+    Array.from(elem.children).forEach(elem => elementToTiles(elem, matrix2));
+  }
+}
 
 const movePlayer = (deltaTime) => {
   const moveSpeed = (gameMode === "EDIT" ? 3 : 1) * (600 * deltaTime) / 1000;
@@ -425,24 +405,6 @@ function handleMouseMove(event) {
   }
 }
 
-
-function createTiles() {
-  camera.textContent = "";
-  tiles.forEach(tile => {
-    processTile(tile);
-
-    const div = document.createElement("div");
-    div.classList.add("hitbox");
-    div.style.transform = `matrix3d(${tile.matrix})`;
-    // div.style.background = "repeating-conic-gradient(black 0deg, black 25%, transparent 0deg, transparent 50%) 50% center / 100px 100px, linear-gradient(0deg, grey 0%, grey 100%)";
-    div.style.background = tile.background ?? "linear-gradient(to right, #333 , gray)";
-    div.textContent = tile.desc;
-    div.style.width = tile.width + "px";
-    div.style.height = tile.height + "px";
-    camera.append(div);
-  });
-}
-
 function updateFpsCounter(deltaTime) {
   fpsValues[fpsIndex++ % fpsValues.length] = deltaTime;
   const sum = fpsValues.reduce((acc, v) => acc + v);
@@ -464,8 +426,26 @@ function handleEnterPointerLock(e) {
 const exitMovingMove = () => {
   editingTileMode = false;
   editingModeController.abort();
-  hoveredTile.style.transform = getComputedStyle(hoveredTile).transform;
+  mergeTransforms(hoveredTile);
   clearSelection();
+}
+
+const toDeg = rad => rad * (180 / Math.PI);
+
+function mergeTransforms(elem) {
+  const { transform } = getComputedStyle(elem);
+  // There are complex computation that are too hard for me
+  if (elem.style.transform.match(/scale|skew|matrix3d/)) {
+    elem.style.transform = transform;
+  } else {
+    // Merge duplicate translations and rotations
+    const matrix = matrixFromTransform(transform);
+    const [x, y, z] = matrix.slice(12);
+    const radX = Math.atan2(-matrix[9], matrix[10]);
+    const radY = Math.asin(matrix[8]);
+    const radZ = Math.atan2(-matrix[4], matrix[0]);
+    elem.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(${toDeg(radX)}deg) rotateY(${toDeg(radY)}deg) rotateZ(${toDeg(radZ)}deg)`;
+  }
 }
 
 const handleEditingAction = () => {
@@ -473,6 +453,7 @@ const handleEditingAction = () => {
   const width = parseInt(hoveredTile.style.width) || 0;
   const height = parseInt(hoveredTile.style.height) || 0;
   const transform = hoveredTile.style.transform;
+  let movementRaw = 0;
   let movement = 0;
 
   if (mode === "add") {
@@ -503,11 +484,17 @@ const handleEditingAction = () => {
         hoveredTile.style.width = width + "px";
         hoveredTile.style.transform = transform;
         exitMovingMove();
+        e.stopPropagation();
       }
     }, {signal: editingModeController.signal});
 
     window.addEventListener("mousemove", e => {
-      movement -= e.movementX;
+      movementRaw -= e.movementX;
+      if (e.ctrlKey) {
+        movement = Math.round(movementRaw / 15) * 15;
+      } else {
+        movement = movementRaw;
+      }
 
       if (mode === "scale") {
         if (index === 1) {
@@ -539,7 +526,9 @@ const handleEditingAction = () => {
         if (index === 1) {
           hoveredTile.style.transform = transform + ` translateY(${movement}px)`;
         } else if (index === 3) {
-            hoveredTile.style.transform = transform + ` translateX(${movement}px)`;
+          hoveredTile.style.transform = transform + ` translateX(${movement}px)`;
+        } else if (index === 4) {
+          hoveredTile.style.transform = transform + ` translateZ(${movement}px)`;
         } else if (index === 7) {
           hoveredTile.style.transform = transform + ` translateY(${-movement}px)`;
         } else if (index === 5) {
@@ -549,11 +538,21 @@ const handleEditingAction = () => {
         if (index === 1) {
           hoveredTile.style.transform = transform + ` translateY(${movement}px)`;
         } else if (index === 3) {
-            hoveredTile.style.transform = transform + ` translateX(${movement}px)`;
+          hoveredTile.style.transform = transform + ` translateX(${movement}px)`;
         } else if (index === 7) {
           hoveredTile.style.transform = transform + ` translateY(${-movement}px)`;
         } else if (index === 5) {
           hoveredTile.style.transform = transform + ` translateX(${-movement}px)`;
+        }
+      } else if (mode === "rotate") {
+        if (index === 3) {
+          hoveredTile.style.transform = transform + ` rotateY(${movement}deg)`;
+        } else if (index === 1) {
+          hoveredTile.style.transform = transform + ` rotateX(${-movement}deg)`;
+        } else if (index === 5) {
+          hoveredTile.style.transform = transform + ` translateX(100%) rotateY(${-movement}deg) translateX(-100%)`;
+        } else if (index === 7) {
+          hoveredTile.style.transform = transform + ` translateY(100%) rotateX(${movement}deg) translateY(-100%)`;
         }
       }
     }, {signal: editingModeController.signal});
@@ -562,23 +561,24 @@ const handleEditingAction = () => {
 
 let editingModeController = new AbortController();
 function handleClick(e) {
+  if (!document.pointerLockElement) {
+    handleEnterPointerLock(e);
+    return;
+  }
+
   if (editingTileMode) {
     exitMovingMove();
     return;
   }
 
-  if (hoveredTile) {
-    hoveredTile?.classList.toggle("clicked");
-    const style = getComputedStyle(hoveredTile);
-
-    console.log(style.transform);
-  }
+  // if (hoveredTile) {
+  //   console.log(getComputedMatrixFromElem(hoveredTile));
+  // }
 
   if (hoveredElement?.classList.contains("corner")) {
     handleEditingAction();
   }
 
-  handleEnterPointerLock(e);
 }
 
 function handlePointerlockchange() {
