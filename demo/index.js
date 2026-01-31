@@ -231,80 +231,100 @@ function movePlayer(deltaTime) {
   }
 }
 
-function applyMovementStep(vel) {
-  let nextPos = {
-    x: position.x + vel.x,
-    y: position.y + vel.y,
-    z: position.z + vel.z,
+/** Finds the closest point on a line segment (v-w) to point p */
+function closestPointOnSegment(p, v, w) {
+  const l2 = (v.x - w.x)**2 + (v.y - w.y)**2 + (v.z - w.z)**2;
+  if (l2 === 0) return v;
+  let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y) + (p.z - v.z) * (w.z - v.z)) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return {
+    x: v.x + t * (w.x - v.x),
+    y: v.y + t * (w.y - v.y),
+    z: v.z + t * (w.z - v.z)
   };
+}
 
-  isOnGround = false;
+function applyMovementStep(vel) {
+  // Move the player by the velocity step
+  position.x += vel.x;
+  position.y += vel.y;
+  position.z += vel.z;
 
-  if (gameMode !== "EDIT") {
-    for (const tile of tiles) {
-      const ab = {
-        x: tile.quads[1].x - tile.quads[0].x,
-        y: tile.quads[1].y - tile.quads[0].y,
-        z: tile.quads[1].z - tile.quads[0].z,
-      };
-      const ac = {
-        x: tile.quads[2].x - tile.quads[0].x,
-        y: tile.quads[2].y - tile.quads[0].y,
-        z: tile.quads[2].z - tile.quads[0].z,
-      };
-      const rawNormal = cross(ab, ac);
-      const mag = Math.sqrt(rawNormal.x ** 2 + rawNormal.y ** 2 + rawNormal.z ** 2);
-      if (mag < 1e-6) continue;
+  if (gameMode === "EDIT") return;
 
-      const normal = {
-        x: rawNormal.x / mag,
-        y: rawNormal.y / mag,
-        z: rawNormal.z / mag,
-      };
+  for (const tile of tiles) {
+    const q = tile.quads;
+    const ab = { x: q[1].x - q[0].x, y: q[1].y - q[0].y, z: q[1].z - q[0].z };
+    const ac = { x: q[2].x - q[0].x, y: q[2].y - q[0].y, z: q[2].z - q[0].z };
+    const rawNormal = cross(ab, ac);
+    const mag = Math.sqrt(rawNormal.x ** 2 + rawNormal.y ** 2 + rawNormal.z ** 2);
+    if (mag < 1e-6) continue;
+    const normal = { x: rawNormal.x / mag, y: rawNormal.y / mag, z: rawNormal.z / mag };
 
-      const pa = {
-        x: nextPos.x - tile.quads[0].x,
-        y: nextPos.y - tile.quads[0].y,
-        z: nextPos.z - tile.quads[0].z,
-      };
-      const distToPlane = dot(normal, pa);
+    const pa = { x: position.x - q[0].x, y: position.y - q[0].y, z: position.z - q[0].z };
+    const distToPlane = dot(normal, pa);
+    if (Math.abs(distToPlane) > PLAYER_RADIUS) continue;
 
-      if (Math.abs(distToPlane) < PLAYER_RADIUS) {
-        const closestPointOnPlane = {
-          x: nextPos.x - normal.x * distToPlane,
-          y: nextPos.y - normal.y * distToPlane,
-          z: nextPos.z - normal.z * distToPlane,
-        };
+    const closestOnPlane = {
+      x: position.x - normal.x * distToPlane,
+      y: position.y - normal.y * distToPlane,
+      z: position.z - normal.z * distToPlane,
+    };
 
-        const inTriangle =
-          isPointInTriangle3D(closestPointOnPlane, tile.quads[0], tile.quads[1], tile.quads[2]) ||
-          isPointInTriangle3D(closestPointOnPlane, tile.quads[0], tile.quads[2], tile.quads[3]);
+    let closestPoint;
+    const inTriangle = isPointInTriangle3D(closestOnPlane, q[0], q[1], q[2]) ||
+      isPointInTriangle3D(closestOnPlane, q[0], q[2], q[3]);
 
-        if (inTriangle) {
-          const overlap = PLAYER_RADIUS - Math.abs(distToPlane);
-          const pushDir = distToPlane > 0 ? 1 : -1;
-          const slopeCos = dot(normal, { x: 0, y: -1, z: 0 });
+    if (inTriangle) {
+      closestPoint = closestOnPlane;
+    } else {
+      const edges = [
+        closestPointOnSegment(position, q[0], q[1]),
+        closestPointOnSegment(position, q[1], q[2]),
+        closestPointOnSegment(position, q[2], q[3]),
+        closestPointOnSegment(position, q[3], q[0])
+      ];
+      let minFacingDist = Infinity;
+      for (const edgePt of edges) {
+        const d = (position.x - edgePt.x)**2 + (position.y - edgePt.y)**2 + (position.z - edgePt.z)**2;
+        if (d < minFacingDist) { minFacingDist = d; closestPoint = edgePt; }
+      }
+    }
 
-          if (slopeCos > MAX_SLOPE_COS) {
-            isOnGround = true;
-            forces.y = 0;
-            nextPos.y += (overlap * pushDir) / normal.y;
-          } else {
-            nextPos.x += normal.x * overlap * pushDir;
-            nextPos.y += normal.y * overlap * pushDir;
-            nextPos.z += normal.z * overlap * pushDir;
-            if (slopeCos < -MAX_SLOPE_COS) {
-              forces.y = Math.max(0, forces.y);
-            }
-          }
+    const diff = { x: position.x - closestPoint.x, y: position.y - closestPoint.y, z: position.z - closestPoint.z };
+    const distance = Math.sqrt(diff.x**2 + diff.y**2 + diff.z**2);
+
+    if (distance < PLAYER_RADIUS && distance > 0) {
+      const overlap = PLAYER_RADIUS - distance;
+      const resolveDir = { x: diff.x / distance, y: diff.y / distance, z: diff.z / distance };
+
+      // slopeCos > 0.707 means the surface is flatter than 45 degrees
+      const slopeCos = dot(resolveDir, { x: 0, y: -1, z: 0 });
+
+      if (slopeCos > MAX_SLOPE_COS) {
+        isOnGround = true;
+        forces.y = 0;
+
+        // Use Pythagorean theorem to find the exact vertical offset needed
+        // to maintain the radius without changing X or Z position.
+        const horizontalDistSq = (position.x - closestPoint.x)**2 + (position.z - closestPoint.z)**2;
+        const verticalNeeded = Math.sqrt(Math.max(0, PLAYER_RADIUS**2 - horizontalDistSq));
+
+        // Snap exactly to the point where the sphere's "belly" touches the slope
+        position.y = closestPoint.y - verticalNeeded;
+
+      } else {
+        position.x += resolveDir.x * overlap;
+        position.y += resolveDir.y * overlap;
+        position.z += resolveDir.z * overlap;
+
+        // If hitting a ceiling (slopeCos < -0.707), kill upward momentum
+        if (slopeCos < -MAX_SLOPE_COS) {
+          forces.y = Math.max(0, forces.y);
         }
       }
     }
   }
-
-  position.x = nextPos.x;
-  position.y = nextPos.y;
-  position.z = nextPos.z;
 }
 
 // =============================================================================
