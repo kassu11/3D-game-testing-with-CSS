@@ -338,7 +338,7 @@ function handleKeydown({ code, repeat }) {
 
   if (code === "Space") {
     userKeys.add(code);
-    if (isOnGround) {
+    if (isOnGround && gameMode !== "EDIT") {
       forces.y = JUMP_FORCE;
       isOnGround = false;
     }
