@@ -217,10 +217,25 @@ function movePlayer(deltaTime) {
     position.y += moveSpeed;
   }
 
+  const totalDist = Math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2);
+  const steps = Math.ceil(totalDist / (PLAYER_RADIUS * 0.5));
+
+  const stepVel = {
+    x: velocity.x / steps,
+    y: velocity.y / steps,
+    z: velocity.z / steps
+  };
+
+  for (let s = 0; s < steps; s++) {
+    applyMovementStep(stepVel);
+  }
+}
+
+function applyMovementStep(vel) {
   let nextPos = {
-    x: position.x + velocity.x,
-    y: position.y + velocity.y,
-    z: position.z + velocity.z,
+    x: position.x + vel.x,
+    y: position.y + vel.y,
+    z: position.z + vel.z,
   };
 
   isOnGround = false;
