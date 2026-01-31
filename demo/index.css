@@ -181,15 +181,6 @@ body {
   box-sizing: border-box;
 
   &.active {
-    filter: brightness(1.25);
-    outline: 2px solid white;
-  }
-
-  &.clicked {
-    outline: 2px solid red;
-
-    &.active {
-      outline: 2px solid deeppink;
-    }
+    border: 2px solid red;
   }
 }

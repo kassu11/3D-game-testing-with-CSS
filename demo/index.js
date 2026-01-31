@@ -7,7 +7,7 @@ const hoverPolygon = hoverRect.querySelector("polygon");
 const hoverCornerTooltips = createHoverToolTips();
 
 const GRAVITY = 0.02;      // Force applied every frame
-const JUMP_FORCE = -12;    // Negative because -Y is Up
+const JUMP_FORCE = -9;    // Negative because -Y is Up
 const MAX_SLOPE_COS = 0.707; // cos(45 degrees)
 
 
@@ -190,7 +190,6 @@ function handleKeydown({ code, repeat }) {
     gameMode = gameMode === "EDIT" ? "SURVIVAL" : "EDIT";
     clearSelection();
     forces.y = 0;
-    console.log(tiles);
     tiles.length = 0;
     createTiles();
   } else if (code.startsWith("Digit")) {
@@ -458,6 +457,7 @@ const handleEditingAction = () => {
 
   if (mode === "add") {
     const clone = hoveredTile.cloneNode();
+    clone.classList.remove("active");
     camera.append(clone);
     if (index === 7) {
       clone.style.transform = transform + ` translateY(${height}px)`;
@@ -648,6 +648,7 @@ function updateHoveredTiles() {
     hoveredElement?.classList.remove("active");
     hoveredTile?.classList.remove("active");
 
+
     const tile = newHoverElement.classList.contains("corner") ? newHoverElement.parentElement.parentElement : newHoverElement;
 
     newHoverElement?.classList.add("active");
@@ -657,7 +658,7 @@ function updateHoveredTiles() {
 
     updateHoverCornerTooltips();
 
-    const matrix = getComputedStyle(tile).transform.match(/matrix3d\((.+)\)/)[1].split(",").map(Number);
+    const matrix = getComputedMatrixFromElem(tile);
     const width2 = parseInt(tile.style.width);
     const height2 = parseInt(tile.style.height);
 
