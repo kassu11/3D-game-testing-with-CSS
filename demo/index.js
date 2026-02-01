@@ -20,10 +20,10 @@ const cornerD = document.querySelector("#cornerD") ?? document.createElement("di
 // CONSTANTS
 // =============================================================================
 
-const GRAVITY = 0.02;
-const JUMP_FORCE = -9;
+const GRAVITY = 0.04;
+const JUMP_FORCE = -10;
 const MAX_SLOPE_COS = 0.707; // cos(45°)
-const PLAYER_RADIUS = 25;
+const PLAYER_RADIUS = 50;
 const MOUSE_SENSITIVITY = 0.005;
 const FPS_SAMPLE_SIZE = 20;
 const FOV = 120;
@@ -185,7 +185,7 @@ function createTiles() {
 // =============================================================================
 
 function movePlayer(deltaTime) {
-  const moveSpeed = (gameMode === "EDIT" ? 3 : 1) * (600 * deltaTime) / 1000;
+  const moveSpeed = (gameMode === "EDIT" ? 3 : (userKeys.has("ShiftLeft") ? 1.75 : 1)) * (600 * deltaTime) / 1000;
 
   if (gameMode !== "EDIT") {
     forces.y += GRAVITY * deltaTime;
