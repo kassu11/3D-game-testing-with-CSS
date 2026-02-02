@@ -176,3 +176,9 @@ body {
     backface-visibility: hidden;
   }
 }
+
+#player-shadow {
+  background-color: #00000030;
+  border-radius: 50%;
+  box-shadow: 0px 0px 20px 20px #00000030;
+}

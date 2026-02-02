@@ -5,6 +5,7 @@
 const viewport = document.querySelector(".viewport#main-viewport");
 const camera = document.querySelector(".camera#main-camera");
 const skyboxCamera = document.querySelector(".camera#skybox-camera");
+const playerShadow = document.querySelector("#player-shadow");
 const posElement = document.querySelector("#pos");
 const yForceElement = document.querySelector("#y-force");
 const fpsElement = document.querySelector("#fps");
@@ -50,7 +51,7 @@ let editingTileMode = false;
 let editingModeController = new AbortController();
 
 // const position = { x: 50, y: -500, z: 50 };
-const position = { x: 0, y: 0, z: 0 };
+const position = { x: 500, y: -2800, z: 1000 };
 const rotation = { x: 0, y: 0, z: 0 };
 const forces = { x: 0, y: 0, z: 0 };
 const userKeys = new Set();
@@ -359,7 +360,13 @@ function handleKeydown({ code, repeat }) {
   }
 
   if (code === "KeyP") {
-    camera.querySelectorAll(":scope > :not(.tile), .tile > :not(.tile)").forEach((e) => e.remove());
+    clearSelection();
+    removeHoverHighlight();
+    cornerA.remove();
+    cornerB.remove();
+    cornerC.remove();
+    cornerD.remove();
+    hoverCornerTooltips.remove();
     console.log(camera.innerHTML);
     return;
   }
@@ -720,7 +727,9 @@ function renderLoop(currentTime, previousTime) {
 
   camera.style.transform =
     `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) ` +
-    `translate3d(${-position.x}px, ${-position.y}px, ${-position.z}px)`;
+    `translate3d(${-position.x}px, ${-position.y + 150}px, ${-position.z}px)`;
+
+  playerShadow.style.transform = `translate3d(${position.x}px, ${position.y}px, ${position.z}px) rotateX(90deg) translateX(-50%) translateY(-50%)`;
 
   skyboxCamera.style.transform = `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) `
 
