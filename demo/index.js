@@ -34,6 +34,7 @@ const editModeKeyMaps = {
   Digit4: "delete",
   Digit5: "rotate",
   Digit6: "shadow",
+  Digit7: "flip",
 };
 
 // =============================================================================
@@ -509,6 +510,13 @@ function handleEditingAction() {
     return;
   }
 
+  if (mode === "flip") {
+    // hoveredTile.classList.remove("active");
+    hoveredTile.style.transform = transform + `translateX(100%) rotateY(180deg)`;
+    mergeTransforms(hoveredTile);
+    return;
+  }
+
   editingTileMode = true;
   editingModeController = new AbortController();
   removeHoverHighlight();
@@ -629,8 +637,10 @@ function updateHighlightHoveredTile() {
 }
 
 function updateHoverCornerTooltips() {
-  hoverCornerTooltips.classList.remove("scale", "move", "rotate", "add", "delete", "shadow");
+  hoverCornerTooltips.classList.remove("scale", "move", "rotate", "add", "delete", "shadow", "flip");
   hoverCornerTooltips.classList.add(mode);
+  viewport.classList.remove("scale", "move", "rotate", "add", "delete", "shadow", "flip");
+  viewport.classList.add(mode);
   if (hoveredTile) {
     hoveredTile.append(hoverCornerTooltips);
   }

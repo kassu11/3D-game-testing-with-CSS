@@ -57,10 +57,11 @@ body {
   &.rotate { color: purple; }
   &.move { color: deepskyblue; }
   &.shadow { color: orange; }
+  &.flip > div { color: gold; opacity: 1 }
 
   &:is(.scale, .add, .rotate, .move, .shadow) > div:nth-child(even),
   &:is(.move, .shadow) > div:nth-child(5),
-  &.delete > div {
+  &:is(.delete, .flip) > div {
     visibility: visible;
   }
 
@@ -130,6 +131,10 @@ body {
   height: 100%;
   overflow: hidden;
   transform-style: preserve-3d;
+
+  &.flip .tile {
+    backface-visibility: hidden;
+  }
 
   * {
     transform-style: preserve-3d;
