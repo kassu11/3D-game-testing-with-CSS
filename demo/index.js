@@ -2,8 +2,9 @@
 // DOM REFERENCES
 // =============================================================================
 
-const viewport = document.querySelector("#viewport");
-const camera = document.querySelector("#camera");
+const viewport = document.querySelector(".viewport#main-viewport");
+const camera = document.querySelector(".camera#main-camera");
+const skyboxCamera = document.querySelector(".camera#skybox-camera");
 const posElement = document.querySelector("#pos");
 const yForceElement = document.querySelector("#y-force");
 const fpsElement = document.querySelector("#fps");
@@ -35,6 +36,7 @@ const editModeKeyMaps = {
   Digit5: "rotate",
   Digit6: "shadow",
   Digit7: "flip",
+  Digit8: "turn",
 };
 
 // =============================================================================
@@ -47,7 +49,8 @@ let isOnGround = false;
 let editingTileMode = false;
 let editingModeController = new AbortController();
 
-const position = { x: 50, y: -500, z: 50 };
+// const position = { x: 50, y: -500, z: 50 };
+const position = { x: 0, y: 0, z: 0 };
 const rotation = { x: 0, y: 0, z: 0 };
 const forces = { x: 0, y: 0, z: 0 };
 const userKeys = new Set();
@@ -427,7 +430,8 @@ function handleResize() {
     Math.pow((w / 2) * w / 2 + (h / 2) * h / 2, 0.5) /
       Math.tan(((FOV / 2) * Math.PI) / 180)
   );
-  viewport.style.setProperty("--perspective", perspective + "px");
+
+  document.body.style.setProperty("--perspective", perspective + "px");
 }
 
 // =============================================================================
@@ -511,8 +515,14 @@ function handleEditingAction() {
   }
 
   if (mode === "flip") {
-    // hoveredTile.classList.remove("active");
     hoveredTile.style.transform = transform + `translateX(100%) rotateY(180deg)`;
+    mergeTransforms(hoveredTile);
+    hoverCornerTooltips.remove();
+    return;
+  }
+
+  if (mode === "turn") {
+    hoveredTile.style.transform = transform + `translateX(100%) rotateZ(90deg)`;
     mergeTransforms(hoveredTile);
     return;
   }
@@ -637,10 +647,10 @@ function updateHighlightHoveredTile() {
 }
 
 function updateHoverCornerTooltips() {
-  hoverCornerTooltips.classList.remove("scale", "move", "rotate", "add", "delete", "shadow", "flip");
+  hoverCornerTooltips.classList.remove("scale", "move", "rotate", "add", "delete", "shadow", "flip", "turn");
   hoverCornerTooltips.classList.add(mode);
-  viewport.classList.remove("scale", "move", "rotate", "add", "delete", "shadow", "flip");
-  viewport.classList.add(mode);
+  document.body.classList.remove("scale", "move", "rotate", "add", "delete", "shadow", "flip", "turn");
+  document.body.classList.add(mode);
   if (hoveredTile) {
     hoveredTile.append(hoverCornerTooltips);
   }
@@ -711,6 +721,8 @@ function renderLoop(currentTime, previousTime) {
   camera.style.transform =
     `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) ` +
     `translate3d(${-position.x}px, ${-position.y}px, ${-position.z}px)`;
+
+  skyboxCamera.style.transform = `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) `
 
   const deltaTime = currentTime - previousTime;
   if (deltaTime > 10) {

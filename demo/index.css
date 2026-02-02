@@ -1,5 +1,6 @@
 html {
-  color-scheme: dark;
+  background-color: #608fbe;
+  color: white;
   font-family:
     system-ui,
     -apple-system,
@@ -61,7 +62,7 @@ body {
 
   &:is(.scale, .add, .rotate, .move, .shadow) > div:nth-child(even),
   &:is(.move, .shadow) > div:nth-child(5),
-  &:is(.delete, .flip) > div {
+  &:is(.delete, .flip, .turn) > div {
     visibility: visible;
   }
 
@@ -123,7 +124,7 @@ body {
   }
 }
 
-#viewport {
+.viewport {
   position: absolute;
   perspective: var(--perspective);
   inset: 0;
@@ -131,10 +132,6 @@ body {
   height: 100%;
   overflow: hidden;
   transform-style: preserve-3d;
-
-  &.flip .tile {
-    backface-visibility: hidden;
-  }
 
   * {
     transform-style: preserve-3d;
@@ -149,7 +146,9 @@ body {
   }
 }
 
-#camera {
+
+
+.camera {
   position: absolute;
   width: 0px;
   height: 0px;
@@ -166,11 +165,14 @@ body {
   position: absolute;
   width: 100px;
   height: 100px;
-  background-color: red;
   transform-origin: 0 0;
   box-sizing: border-box;
 
   &.active {
     border: 2px solid red;
+  }
+
+  .flip & {
+    backface-visibility: hidden;
   }
 }
