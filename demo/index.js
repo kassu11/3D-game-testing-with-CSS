@@ -33,6 +33,7 @@ const editModeKeyMaps = {
   Digit3: "add",
   Digit4: "delete",
   Digit5: "rotate",
+  Digit6: "shadow",
 };
 
 // =============================================================================
@@ -481,6 +482,26 @@ function handleEditingAction() {
     return;
   }
 
+  if (mode === "shadow") {
+    hoveredTile.classList.remove("active");
+    camera.append(hoveredTile);
+    const shadows = {
+      7: ` inset 0 -30px 30px -30px black`,
+      1: ` inset 0 30px 30px -30px black`,
+      3: ` inset 30px 0 30px -30px black`,
+      5: ` inset -30px 0 30px -30px black`,
+      4: ` inset 0 0 30px black`,
+    };
+    if (shadows[index]) {
+      if (hoveredTile.style.boxShadow) {
+        hoveredTile.style.boxShadow += "," + shadows[index];
+      } else {
+        hoveredTile.style.boxShadow = shadows[index];
+      }
+    }
+    return;
+  }
+
   if (mode === "delete") {
     hoveredTile.remove();
     updateHoveredTiles();
@@ -608,7 +629,7 @@ function updateHighlightHoveredTile() {
 }
 
 function updateHoverCornerTooltips() {
-  hoverCornerTooltips.classList.remove("scale", "move", "rotate", "add", "delete");
+  hoverCornerTooltips.classList.remove("scale", "move", "rotate", "add", "delete", "shadow");
   hoverCornerTooltips.classList.add(mode);
   if (hoveredTile) {
     hoveredTile.append(hoverCornerTooltips);
