@@ -367,7 +367,8 @@ function handleKeydown({ code, repeat }) {
     cornerC.remove();
     cornerD.remove();
     hoverCornerTooltips.remove();
-    console.log(camera.innerHTML);
+
+    console.log(formatElement(camera));
     return;
   }
 
@@ -459,6 +460,26 @@ function mergeTransforms(elem) {
   }
 }
 
+function formatElement(el, indent = 0) {
+  const spacing = "  ".repeat(indent);
+
+  // 1. Collect attributes into a string (e.g., ' class="box" id="main"')
+  const attrs = Array.from(el.attributes)
+  .map(attr => ` ${attr.name}="${attr.value.replaceAll('"', "&quot;")}"`)
+  .join('');
+
+  const tagName = el.tagName.toLowerCase();
+  let output = `\n${spacing}<${tagName}${attrs}>`;
+
+  // 2. Recursively handle children
+  Array.from(el.children).forEach(child => {
+    output += formatElement(child, indent + 1);
+  });
+
+  output += `</${tagName}>`;
+  return output;
+}
+
 function exitEditingMove() {
   editingTileMode = false;
   editingModeController.abort();
@@ -476,8 +497,9 @@ function handleEditingAction() {
   let movement = 0;
 
   if (mode === "add") {
-    const clone = hoveredTile.cloneNode();
+    const clone = hoveredTile.cloneNode(true);
     clone.classList.remove("active");
+    clone.querySelector("#hoverToolTip")?.remove();
     camera.append(clone);
     const addOffsets = {
       7: ` translateY(${height}px)`,
