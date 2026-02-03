@@ -23,6 +23,10 @@ body {
   box-sizing: border-box;
 }
 
+body:not([data-gamemode="EDIT"]) .warp {
+  visibility: hidden;
+}
+
 #wrapper {
   position: absolute;
   width: 100%;

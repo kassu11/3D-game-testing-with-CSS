@@ -57,6 +57,7 @@ const forces = { x: 0, y: 0, z: 0 };
 const userKeys = new Set();
 
 const tiles = [];
+const warps = [];
 let hoveredElement = null;
 let hoveredTile = null;
 
@@ -172,6 +173,25 @@ function elementToTiles(elem, matrix) {
     };
     addQuadsToTile(tile);
     tiles.push(tile);
+  } else if (elem.classList.contains("warp")) {
+    const tile = {
+      width: parseInt(width),
+      height: parseInt(height),
+      matrix: matrix2,
+      id: elem.id,
+      rotate: {x: (parseFloat(elem.dataset.rotateX) / 180) * Math.PI, y: 0, z: 0}
+    };
+    addQuadsToTile(tile);
+    tile.center = tile.quads.reduce((acc, {x, y, z}) => ({x: acc.x + x, y: acc.y + y, z: acc.z + z}), {x: 0, y: 0, z: 0});
+    for (const key in tile.center) {
+      tile.center[key] = tile.center[key] / tile.quads.length;
+    }
+
+    if (elem.dataset.destination) {
+      warps.push(tile);
+      tile.destination = elem.dataset.destination;
+    }
+    warps[elem.id] = tile;
   }
 
   if (elem.children.length) {
@@ -181,6 +201,7 @@ function elementToTiles(elem, matrix) {
 
 function createTiles() {
   tiles.length = 0;
+  warps.length = 0;
   Array.from(camera.children).forEach((elem) =>
     elementToTiles(elem, matrixFromTransform(""))
   );
@@ -331,6 +352,37 @@ function applyMovementStep(vel) {
       }
     }
   }
+
+  for (const tile of warps) {
+    const q = tile.quads;
+    const ab = { x: q[1].x - q[0].x, y: q[1].y - q[0].y, z: q[1].z - q[0].z };
+    const ac = { x: q[2].x - q[0].x, y: q[2].y - q[0].y, z: q[2].z - q[0].z };
+    const rawNormal = cross(ab, ac);
+    const mag = Math.sqrt(rawNormal.x ** 2 + rawNormal.y ** 2 + rawNormal.z ** 2);
+    if (mag < 1e-6) continue;
+    const normal = { x: rawNormal.x / mag, y: rawNormal.y / mag, z: rawNormal.z / mag };
+
+    const pa = { x: position.x - q[0].x, y: position.y - q[0].y, z: position.z - q[0].z };
+    const distToPlane = dot(normal, pa);
+    if (Math.abs(distToPlane) > PLAYER_RADIUS) continue;
+
+    const closestOnPlane = {
+      x: position.x - normal.x * distToPlane,
+      y: position.y - normal.y * distToPlane,
+      z: position.z - normal.z * distToPlane,
+    };
+
+    const inTriangle = isPointInTriangle3D(closestOnPlane, q[0], q[1], q[2]) ||
+      isPointInTriangle3D(closestOnPlane, q[0], q[2], q[3]);
+
+    if (inTriangle) {
+      const start = warps[tile.id].center;
+      const end = warps[tile.destination].center;
+      position.x += end.x - start.x;
+      position.y += end.y - start.y;
+      position.z += end.z - start.z;
+    }
+  }
 }
 
 // =============================================================================
@@ -374,6 +426,7 @@ function handleKeydown({ code, repeat }) {
 
   if (code === "KeyH") {
     gameMode = gameMode === "EDIT" ? "SURVIVAL" : "EDIT";
+    document.body.dataset.gamemode = gameMode;
     clearSelection();
     forces.y = 0;
     createTiles();
@@ -756,7 +809,7 @@ function renderLoop(currentTime, previousTime) {
   skyboxCamera.style.transform = `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) `
 
   const deltaTime = currentTime - previousTime;
-  if (deltaTime > 1000) {
+  if (deltaTime > 10000) {
     return;
   }
 
