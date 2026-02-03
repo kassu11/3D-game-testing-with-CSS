@@ -749,14 +749,14 @@ function renderLoop(currentTime, previousTime) {
 
   camera.style.transform =
     `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) ` +
-    `translate3d(${-position.x}px, ${-position.y + 150}px, ${-position.z}px)`;
+    `translate3d(${-position.x}px, ${-position.y + 200}px, ${-position.z}px)`;
 
   playerShadow.style.transform = `translate3d(${position.x}px, ${position.y}px, ${position.z}px) rotateX(90deg) translateX(-50%) translateY(-50%)`;
 
   skyboxCamera.style.transform = `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) `
 
   const deltaTime = currentTime - previousTime;
-  if (deltaTime > 10) {
+  if (deltaTime > 1000) {
     return;
   }
 
