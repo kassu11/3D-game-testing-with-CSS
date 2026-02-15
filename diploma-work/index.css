@@ -1,0 +1,89 @@
+/* body { */
+/*	 margin: 0; */
+/* } */
+
+/* * { */
+/*	 box-sizing: border-box; */
+/* } */
+
+/* body:not([data-gamemode="EDIT"]) .warp { */
+/*	 visibility: hidden; */
+/* } */
+
+
+#crosshair {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	translate: -50% -50%;
+	pointer-events: none;
+	user-select: none;
+	z-index: 100;
+	font-size: 32px;
+}
+
+.viewport {
+	perspective: var(--perspective);
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+
+	&, * {
+		position: absolute;
+		transform-style: preserve-3d;
+		transform-origin: 0 0;
+	}
+}
+
+.camera {
+	left: 50%;
+	top: 50%;
+	translate: 0 0 var(--perspective);
+}
+
+
+.tile.hovered {
+	pointer-events: none;
+}
+
+#edit-handles {
+	display: grid;
+	inset: 0;
+	grid-template-columns: repeat(3, 1fr);
+	grid-template-rows: repeat(3, 1fr);
+
+	.edit-handle {
+		position: relative;
+		pointer-events: all;
+		width: 100%;
+		height: 100%;
+		background-color: green;
+
+		&.hovered {
+			background-color: blue;
+		}
+	}
+}
+
+/* .tile { */
+/*	 position: absolute; */
+/*	 width: 100px; */
+/*	 height: 100px; */
+/*	 transform-origin: 0 0; */
+/*	 box-sizing: border-box; */
+/**/
+/*	 &.active { */
+/*		 border: 2px solid red; */
+/*	 } */
+/**/
+/*	 .flip & { */
+/*		 backface-visibility: hidden; */
+/*	 } */
+/* } */
+
+/* #player-shadow { */
+/*	 background-color: #00000030; */
+/*	 border-radius: 50%; */
+/*	 box-shadow: 0px 0px 20px 20px #00000030; */
+/* } */

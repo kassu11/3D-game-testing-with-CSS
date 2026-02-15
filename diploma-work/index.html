@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>3D Game</title>
+		<link rel="stylesheet" href="./index.css" />
+	</head>
+	<body style="--perspective: 800px" data-mode="edit">
+		<div id="crosshair">+</div>
+		<div class="viewport" id="world-viewport">
+			<div class="camera" id="world-camera" style="transform: rotateX(0rad) rotateY(0rad) rotateZ(0rad) translate3d(0px, 0px, 0px);">
+				<div class="tile" style="background-color: red; width: 510px; height: 510px; transform: translate3d(0px, 0px, -500px) rotateX(0deg) rotateY(0deg) rotateZ(0deg);"></div>
+			</div>
+		</div>
+	</body>
+</html>
+
+<script src="./index.js"></script>
