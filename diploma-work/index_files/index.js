@@ -141,6 +141,9 @@ window.addEventListener("mousedown", handleMouseDown);
 window.addEventListener("keydown", handleKeydown);
 window.addEventListener("keyup", handleKeyup);
 
+document.querySelector("#edit-handles")?.remove();
+document.querySelectorAll(".hovered")?.forEach(elem => elem.classList.remove("hovered"));
+
 window.requestAnimationFrame((previousTime) =>
 	window.requestAnimationFrame((currentTime) => renderLoop(currentTime, previousTime))
 );
