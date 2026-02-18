@@ -19,8 +19,13 @@ const position = { x: 0, y: 0, z: 0 };
 const rotation = { x: 0, y: 0, z: 0 };
 const activeKeys = new Set();
 
-let hoveredTile = null;
-let hoveredElement = null;
+const hovered = { tile: null, element: null };
+
+const edit = {
+	tool: null,
+	preventMouse: false,
+	controller: null,
+}
 
 // =============================================================================
 // PLAYER MOVEMENT & COLLISION
@@ -50,20 +55,43 @@ function movePlayer(deltaTime) {
 function handleMouseDown(event) {
 	if (!document.pointerLockElement) {
 		document.body.requestPointerLock({ unadjustedMovement: true });
+		return;
 	}
+
+	if (!hovered.element) return;
+
+	toggleHandleEdit();
+
 }
 
 function handleMouseMove(event) {
-	if (document.pointerLockElement) {
+	if (!document.pointerLockElement) {
+		return;
+	}
+
+	if (!edit.preventMouse) {
 		rotation.y += event.movementX * MOUSE_SENSITIVITY;
 		rotation.x -= event.movementY * MOUSE_SENSITIVITY;
 		rotation.x = Math.min(Math.PI / 2, Math.max(rotation.x, -Math.PI / 2));
+		return;
 	}
+
+	// hoveredTile.
 }
 
 function handleKeydown({ code, repeat }) {
 	if (repeat) return;
 	activeKeys.add(code);
+
+	if (code === "Digit1") {
+		handleEditToolChange("add");
+	} else if (code === "Digit2") {
+		handleEditToolChange("remove");
+	} else if (code === "Digit3") {
+		handleEditToolChange("move");
+	} else if (code === "Digit4") {
+		handleEditToolChange("rotate");
+	}
 }
 
 function handleKeyup({ code }) {
@@ -95,28 +123,100 @@ function renderLoop(currentTime, previousTime) {
 // =============================================================================
 
 function handleHoverChange(target) {
-	hoveredElement?.classList.toggle("hovered", hoveredElement === hoveredTile);
-	hoveredElement = target;
-	hoveredElement?.classList.add("hovered");
+	// if (target.id === "edit-handles") {
+	// }
+	hovered.element?.classList.toggle("hovered", hovered.element === hovered.tile);
+	hovered.element = target;
+	hovered.element?.classList.add("hovered");
 
 	const parentTile = target?.classList.contains("tile") ? target : target?.closest(".tile") || null;
-	if (parentTile === hoveredTile) return;
+	if (parentTile === hovered.tile) return;
 
-	hoveredTile?.querySelector("#edit-handles")?.remove();
-	hoveredTile?.classList.remove("hovered");
-	hoveredTile = parentTile;
-	hoveredTile?.classList.add("hovered");
+	hovered.tile?.querySelector("#edit-handles")?.remove();
+	hovered.tile?.classList.remove("hovered");
+	hovered.tile = parentTile;
+	hovered.tile?.classList.add("hovered");
 
-	if (!hoveredTile) return;
+	if (!hovered.tile) return;
 
 	const hoverHandles = document.createElement("div");
 	hoverHandles.id = "edit-handles";
-	hoveredTile.append(hoverHandles);
+	hovered.tile.append(hoverHandles);
 
 	for (let i = 0; i < 9; i++) {
 		const editorHandle = document.createElement("div");
 		editorHandle.classList.add("edit-handle");
 		hoverHandles.append(editorHandle);
+	}
+}
+
+const xAxis = [ -1, 0, 1, -1, 0, 1, -1, 0, 1, ];
+const yAxis = [ -1, -1, -1, 0, 0, 0, 1, 1, 1 ];
+const zAxis = [ 0, 0, 0, 0, 1, 0, 0, 0, 0 ];
+
+function toggleHandleEdit() {
+	edit.controller?.abort();
+	edit.controller = new AbortController();
+
+	if (edit.preventMouse || hovered.element === hovered.tile) {
+		edit.preventMouse = false;
+		return;
+	}
+
+	const index = Array.prototype.indexOf.call(hovered.element.parentElement.children, hovered.element);
+	const width = parseInt(hovered.tile.style.width) || 0;
+	const height = parseInt(hovered.tile.style.height) || 0;
+	const transform = hovered.tile.style.transform || "";
+	let movementRaw = 0;
+	let movement = 0;
+	console.log(index);
+
+	const dx = xAxis[index];
+	const dy = yAxis[index];
+	const dz = zAxis[index];
+
+	if (edit.tool === "add") {
+		if (!dx && !dy) return;
+
+		const clone = hovered.tile.cloneNode(true);
+		clone.classList.remove("hovered");
+		clone.querySelector("#edit-handles")?.remove();
+		clone.style.transform = transform + `translateX(${dx * 100}%) translateY(${dy * 100}%)`;
+		camera.append(clone);
+	} else if (edit.tool === "remove") {
+		hovered.tile.remove();
+	} else {
+		edit.preventMouse = true;
+		window.addEventListener("keydown", event => {
+			if (event.code === "Escape" || (event.ctrlKey && event.code === "KeyZ")) {
+				hovered.tile.style.height = height + "px";
+				hovered.tile.style.width = width + "px";
+				hovered.tile.style.transform = transform;
+				edit.controller.abort();
+				edit.preventMouse = false;
+				event.stopPropagation();
+			}
+		}, { signal: edit.controller.signal });
+
+		window.addEventListener("mousemove", event => {
+			movementRaw -= event.movementX;
+			movement = Math.round(movementRaw / 5) * 5;
+
+			if (edit.tool === "move") {
+				if (!dx && !dy && !dz) return;
+				hovered.tile.style.transform = transform + ` translate3d(${dx * movement}px, ${dy * movement}px, ${dz * movement}px) `;
+			}
+			else if (edit.tool === "rotate") {
+				if (!dx && !dy) return;
+				hovered.tile.style.transform = transform +
+					` translateX(${Math.max(dx * 100, 0)}%)` +
+					` translateY(${Math.max(dy * 100, 0)}%)` +
+					` rotateX(${dy * movement}deg)` +
+					` rotateY(${dx * movement}deg)` + 
+					` translateX(${-Math.max(dx * 100, 0)}%)` +
+					` translateY(${-Math.max(dy * 100, 0)}%)`;
+			}
+		}, { signal: edit.controller.signal });
 	}
 }
 
@@ -126,9 +226,15 @@ function updateHoveredTiles() {
 	const elem = document.elementFromPoint(centerX, centerY);
 	const target = elem !== viewport ? elem : null;
 
-	if (target === hoveredElement) return;
+	if (target === hovered.element) return;
+	if (edit.preventMouse) return;
 
 	handleHoverChange(target);
+}
+
+function handleEditToolChange(tool) {
+	edit.tool = tool;
+	document.body.dataset.editTool = tool;
 }
 
 
