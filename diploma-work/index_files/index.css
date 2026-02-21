@@ -62,7 +62,7 @@
 	pointer-events: all;
 
 	:where([data-edit-tool="remove"], [data-edit-tool="move"]) &,
-	:where([data-edit-tool="add"]) &:not(:nth-child(5)),
+	:where([data-edit-tool="add"], [data-edit-tool="size"]) &:not(:nth-child(5)),
 	:where([data-edit-tool="rotate"]) &:nth-child(even) {
 		background-color: black;
 		opacity: .5;
@@ -76,6 +76,7 @@
 	[data-edit-tool="remove"] & { background-color: crimson; opacity: 1; }
 	[data-edit-tool="rotate"] & { background-color: orange; }
 	[data-edit-tool="move"] & { background-color: skyblue; }
+	[data-edit-tool="size"] & { background-color: purple; }
 }
 
 /* .tile { */

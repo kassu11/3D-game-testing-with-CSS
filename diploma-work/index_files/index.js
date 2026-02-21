@@ -22,9 +22,16 @@ const activeKeys = new Set();
 const hovered = { tile: null, element: null };
 
 const edit = {
-	tool: null,
+	tool: document.body.dataset.editTool,
 	preventMouse: false,
 	controller: null,
+	keys: {
+		Digit1: "add",
+		Digit2: "remove",
+		Digit3: "move",
+		Digit4: "rotate",
+		Digit5: "size",
+	}
 }
 
 // =============================================================================
@@ -83,15 +90,7 @@ function handleKeydown({ code, repeat }) {
 	if (repeat) return;
 	activeKeys.add(code);
 
-	if (code === "Digit1") {
-		handleEditToolChange("add");
-	} else if (code === "Digit2") {
-		handleEditToolChange("remove");
-	} else if (code === "Digit3") {
-		handleEditToolChange("move");
-	} else if (code === "Digit4") {
-		handleEditToolChange("rotate");
-	}
+	if (code in edit.keys) handleEditToolChange(edit.keys[code]);
 }
 
 function handleKeyup({ code }) {
@@ -150,18 +149,61 @@ function handleHoverChange(target) {
 	}
 }
 
+const toDeg = (rad) => rad * (180 / Math.PI);
+
+function matrixFromTransform(transform) {
+	if (transform.startsWith("matrix3d")) return transform.substring(9).split(",").map(parseFloat);
+	if (transform.startsWith("matrix(")) {
+		const [a, b, c, d, tx, ty] = transform.substring(7).split(",").map(parseFloat);
+		return [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, tx, ty, 0, 1 ];
+	}
+
+	return [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ];
+}
+
+function mergeTransforms(elem) {
+	const { transform } = getComputedStyle(elem);
+	if (elem.style.transform?.match(/scale|skew|matrix3d/)) {
+		elem.style.transform = transform;
+	} else {
+		const m = matrixFromTransform(transform);
+		const [x, y, z] = m.slice(12);
+
+		let radX, radY, radZ;
+
+		const sinY = Math.max(-1, Math.min(1, m[8]));
+		radY = Math.asin(sinY);
+
+		if (Math.abs(sinY) < 0.99999) {
+			radX = Math.atan2(-m[9], m[10]);
+			radZ = Math.atan2(-m[4], m[0]);
+		} else {
+			radX = Math.atan2(m[1], m[5]) * (sinY > 0 ? 1 : -1);
+			radZ = 0;
+		}
+
+		elem.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(${toDeg(radX)}deg) rotateY(${toDeg(radY)}deg) rotateZ(${toDeg(radZ)}deg)`;
+	}
+}
+
 const xAxis = [ -1, 0, 1, -1, 0, 1, -1, 0, 1, ];
 const yAxis = [ -1, -1, -1, 0, 0, 0, 1, 1, 1 ];
 const zAxis = [ 0, 0, 0, 0, 1, 0, 0, 0, 0 ];
+
+function exitEdit() {
+	edit.controller?.abort();
+	edit.controller = new AbortController();
+	edit.preventMouse = false;
+	if (hovered.tile) mergeTransforms(hovered.tile);
+}
 
 function toggleHandleEdit() {
 	edit.controller?.abort();
 	edit.controller = new AbortController();
 
-	if (edit.preventMouse || hovered.element === hovered.tile) {
-		edit.preventMouse = false;
-		return;
-	}
+	if (!edit.tool || edit.preventMouse || !hovered.element?.classList.contains("edit-handle")) return exitEdit();
+
+	mergeTransforms(hovered.tile);
 
 	const index = Array.prototype.indexOf.call(hovered.element.parentElement.children, hovered.element);
 	const width = parseInt(hovered.tile.style.width) || 0;
@@ -169,20 +211,20 @@ function toggleHandleEdit() {
 	const transform = hovered.tile.style.transform || "";
 	let movementRaw = 0;
 	let movement = 0;
-	console.log(index);
 
 	const dx = xAxis[index];
 	const dy = yAxis[index];
 	const dz = zAxis[index];
 
 	if (edit.tool === "add") {
-		if (!dx && !dy) return;
+		if (index === 4) return;
 
 		const clone = hovered.tile.cloneNode(true);
 		clone.classList.remove("hovered");
 		clone.querySelector("#edit-handles")?.remove();
 		clone.style.transform = transform + `translateX(${dx * 100}%) translateY(${dy * 100}%)`;
 		camera.append(clone);
+		mergeTransforms(clone);
 	} else if (edit.tool === "remove") {
 		hovered.tile.remove();
 	} else {
@@ -192,9 +234,8 @@ function toggleHandleEdit() {
 				hovered.tile.style.height = height + "px";
 				hovered.tile.style.width = width + "px";
 				hovered.tile.style.transform = transform;
-				edit.controller.abort();
-				edit.preventMouse = false;
 				event.stopPropagation();
+				exitEdit();
 			}
 		}, { signal: edit.controller.signal });
 
@@ -202,20 +243,31 @@ function toggleHandleEdit() {
 			movementRaw -= event.movementX;
 			movement = Math.round(movementRaw / 5) * 5;
 
-			if (edit.tool === "move") {
-				if (!dx && !dy && !dz) return;
-				hovered.tile.style.transform = transform + ` translate3d(${dx * movement}px, ${dy * movement}px, ${dz * movement}px) `;
+			if (edit.tool === "move") hovered.tile.style.transform = transform + ` translate3d(${dx * movement}px, ${dy * movement}px, ${dz * movement}px) `;
+			else if (edit.tool === "size" && index !== 4) {
+				let tr = transform;
+				if (dy === -1) {
+					hovered.tile.style.height = Math.abs(movement - height) + "px";
+					tr += height - movement < 0 ? ` translateY(${height}px)` : ` translateY(${movement}px)`;
+				} else if (dy === 1) {
+					hovered.tile.style.height = Math.abs(height - movement) + "px";
+					if (height - movement < 0) tr += ` translateY(${height - movement}px)`;
+				}
+				if (dx === -1) {
+					hovered.tile.style.width = Math.abs(movement - width) + "px";
+					tr += width - movement < 0 ? ` translateX(${width}px)` : ` translateX(${movement}px)`;
+				} else if (dx === 1) {
+					hovered.tile.style.width = Math.abs(width - movement) + "px";
+					if (width - movement < 0) tr += ` translateX(${width - movement}px)`;
+				}
+				hovered.tile.style.transform = tr;
 			}
-			else if (edit.tool === "rotate") {
-				if (!dx && !dy) return;
+			else if (edit.tool === "rotate" && index % 2 === 1) {
 				hovered.tile.style.transform = transform +
-					` translateX(${Math.max(dx * 100, 0)}%)` +
-					` translateY(${Math.max(dy * 100, 0)}%)` +
-					` rotateX(${dy * movement}deg)` +
-					` rotateY(${dx * movement}deg)` + 
-					` translateX(${-Math.max(dx * 100, 0)}%)` +
-					` translateY(${-Math.max(dy * 100, 0)}%)`;
-			}
+					` translateX(${Math.max(dx * 100, 0)}%) translateY(${Math.max(dy * 100, 0)}%)` +
+					` rotateX(${dy * movement}deg) rotateY(${dx * movement}deg)` +
+					` translateX(${-Math.max(dx * 100, 0)}%) translateY(${-Math.max(dy * 100, 0)}%)`;
+			} else exitEdit();
 		}, { signal: edit.controller.signal });
 	}
 }
