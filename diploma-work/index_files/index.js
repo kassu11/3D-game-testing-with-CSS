@@ -26,43 +26,51 @@ const edit = {
 	preventMouse: false,
 	controller: null,
 	keys: { Digit1: "add", Digit2: "remove", Digit3: "move", Digit4: "rotate", Digit5: "size" },
-	actions: {
-		add: ({dx, dy}) => {
-			if (dx === 0 && dy === 0) return;
-			const clone = hovered.tile.cloneNode(true);
-			clone.classList.remove("hovered");
-			clone.querySelector("#edit-handles")?.remove();
-			clone.style.transform += `translateX(${dx * 100}%) translateY(${dy * 100}%)`;
-			camera.append(clone);
-			mergeTransforms(clone);
-		},
-		remove: () => hovered.tile.remove(),
-		move: ({ dx, dy, dz, transform, delta }) => hovered.tile.style.transform = transform + ` translate3d(${dx * delta}px, ${dy * delta}px, ${dz * delta}px)`,
-		rotate: ({ dx, dy, transform, delta }) => {
-			hovered.tile.style.transform = transform +
-				` translateX(${Math.max(dx * 100, 0)}%) translateY(${Math.max(dy * 100, 0)}%)` +
-				` rotateX(${dy * delta}deg) rotateY(${dx * delta}deg)` +
-				` translateX(${-Math.max(dx * 100, 0)}%) translateY(${-Math.max(dy * 100, 0)}%)`;
-		},
-		size: ({ dx, dy, transform, delta, width, height}) => {
-			if (dy === -1) {
-				hovered.tile.style.height = Math.abs(delta - height) + "px";
-				transform += height - delta < 0 ? ` translateY(${height}px)` : ` translateY(${delta}px)`;
-			} else if (dy === 1) {
-				hovered.tile.style.height = Math.abs(height - delta) + "px";
-				if (height - delta < 0) transform += ` translateY(${height - delta}px)`;
-			}
-			if (dx === -1) {
-				hovered.tile.style.width = Math.abs(delta - width) + "px";
-				transform += width - delta < 0 ? ` translateX(${width}px)` : ` translateX(${delta}px)`;
-			} else if (dx === 1) {
-				hovered.tile.style.width = Math.abs(width - delta) + "px";
-				if (width - delta < 0) transform += ` translateX(${width - delta}px)`;
-			}
-			hovered.tile.style.transform = transform;
-		},
-	}
 }
+
+const editActions = {
+	remove: () => hovered.tile.remove(),
+	move: ({ dx, dy, dz, transform, delta }) => hovered.tile.style.transform = transform +
+		` translate3d(${dx * delta}px, ${dy * delta}px, ${dz * delta}px)`,
+	rotate: ({ dx, dy, transform, delta }) => {
+		hovered.tile.style.transform = transform +
+			` translateX(${Math.max(dx * 100, 0)}%) translateY(${Math.max(dy * 100, 0)}%)` +
+			` rotateX(${dy * delta}deg) rotateY(${dx * delta}deg)` +
+			` translateX(${-Math.max(dx * 100, 0)}%) translateY(${-Math.max(dy * 100, 0)}%)`;
+	},
+	add: ({dx, dy}) => {
+		if (dx === 0 && dy === 0) return;
+		const clone = hovered.tile.cloneNode(true);
+		clone.classList.remove("hovered");
+		clone.querySelector("#edit-handles")?.remove();
+		clone.style.transform += `translateX(${dx * 100}%) translateY(${dy * 100}%)`;
+		camera.append(clone);
+		mergeTransforms(clone);
+	},
+	size: ({ dx, dy, transform, delta, width, height}) => {
+		if (dy === -1) {
+			hovered.tile.style.height = Math.abs(delta - height) + "px";
+			transform += height - delta < 0 ? ` translateY(${height}px)` : ` translateY(${delta}px)`;
+		} else if (dy === 1) {
+			hovered.tile.style.height = Math.abs(height - delta) + "px";
+			if (height - delta < 0) transform += ` translateY(${height - delta}px)`;
+		}
+		if (dx === -1) {
+			hovered.tile.style.width = Math.abs(delta - width) + "px";
+			transform += width - delta < 0 ? ` translateX(${width}px)` : ` translateX(${delta}px)`;
+		} else if (dx === 1) {
+			hovered.tile.style.width = Math.abs(width - delta) + "px";
+			if (width - delta < 0) transform += ` translateX(${width - delta}px)`;
+		}
+		hovered.tile.style.transform = transform;
+	},
+}
+
+const editHandleDirections = [
+	{ dx: -1, dy: -1, dz: 0 }, { dx: 0, dy: -1, dz: 0 }, { dx: 1, dy: -1, dz: 0 },
+	{ dx: -1, dy: 0,  dz: 0 }, { dx: 0, dy: 0,  dz: 1 }, { dx: 1, dy: 0,  dz: 0 },
+	{ dx: -1, dy: 1,  dz: 0 }, { dx: 0, dy: 1,  dz: 0 }, { dx: 1, dy: 1,  dz: 0 },
+];
 
 // =============================================================================
 // PLAYER MOVEMENT & COLLISION
@@ -112,8 +120,6 @@ function handleMouseMove(event) {
 		rotation.x = Math.min(Math.PI / 2, Math.max(rotation.x, -Math.PI / 2));
 		return;
 	}
-
-	// hoveredTile.
 }
 
 function handleKeydown({ code, repeat }) {
@@ -214,10 +220,6 @@ function mergeTransforms(elem) {
 	}
 }
 
-const xAxis = [ -1, 0, 1, -1, 0, 1, -1, 0, 1, ];
-const yAxis = [ -1, -1, -1, 0, 0, 0, 1, 1, 1 ];
-const zAxis = [ 0, 0, 0, 0, 1, 0, 0, 0, 0 ];
-
 function exitEdit() {
 	edit.controller?.abort();
 	edit.controller = new AbortController();
@@ -234,12 +236,10 @@ function toggleHandleEdit() {
 	mergeTransforms(hovered.tile);
 
 	const index = Array.prototype.indexOf.call(hovered.element.parentElement.children, hovered.element);
-	const dx = xAxis[index];
-	const dy = yAxis[index];
-	const dz = zAxis[index];
+	const { dx, dy, dz } = editHandleDirections[index];
 
-	if (edit.tool === "add") return edit.actions.add({dx, dy});
-	if (edit.tool === "remove") return edit.actions.remove();
+	if (edit.tool === "add") return editActions.add({dx, dy});
+	if (edit.tool === "remove") return editActions.remove();
 
 	const width = parseInt(hovered.tile.style.width) || 0;
 	const height = parseInt(hovered.tile.style.height) || 0;
@@ -262,9 +262,9 @@ function toggleHandleEdit() {
 		movementRaw -= event.movementX;
 		const delta = Math.round(movementRaw / 5) * 5;
 
-		if (edit.tool === "move") edit.actions.move({ dx, dy, dz, delta, transform });
-		else if (edit.tool === "size" && index !== 4) edit.actions.size({ dx, dy, delta, transform, width, height });
-		else if (edit.tool === "rotate" && index % 2 === 1) edit.actions.rotate({ dx, dy, delta, transform });
+		if (edit.tool === "move") editActions.move({ dx, dy, dz, delta, transform });
+		else if (edit.tool === "size" && index !== 4) editActions.size({ dx, dy, delta, transform, width, height });
+		else if (edit.tool === "rotate" && index % 2 === 1) editActions.rotate({ dx, dy, delta, transform });
 		else exitEdit();
 	}, { signal });
 }
