@@ -39,7 +39,7 @@ const edit = {
 // =============================================================================
 
 function movePlayer(deltaTime) {
-	const speed = 2 * deltaTime;
+	const speed = 2000 * deltaTime;
 	let moveX = activeKeys.has("KeyA") - activeKeys.has("KeyD");
 	let moveZ = activeKeys.has("KeyS") - activeKeys.has("KeyW");
 	let moveY = activeKeys.has("ShiftLeft") - activeKeys.has("Space");
@@ -105,7 +105,7 @@ function handleKeyup({ code }) {
 function renderLoop(currentTime, previousTime) {
 	window.requestAnimationFrame((time) => renderLoop(time, currentTime));
 
-	const deltaTime = currentTime - previousTime;
+	const deltaTime = (currentTime - previousTime) / 1000;
 	movePlayer(deltaTime);
 
 	camera.style.transform = `
