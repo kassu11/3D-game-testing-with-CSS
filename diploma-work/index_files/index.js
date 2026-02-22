@@ -29,7 +29,10 @@ const edit = {
 }
 
 const editActions = {
-	remove: () => hovered.tile.remove(),
+	remove: () => {
+		if (hovered.tile.previousSibling.wholeText) hovered.tile.previousSibling.remove();
+		hovered.tile.remove();
+	},
 	move: ({ dx, dy, dz, transform, delta }) => hovered.tile.style.transform = transform +
 		` translate3d(${dx * delta}px, ${dy * delta}px, ${dz * delta}px)`,
 	rotate: ({ dx, dy, transform, delta }) => {
@@ -44,7 +47,7 @@ const editActions = {
 		clone.classList.remove("hovered");
 		clone.querySelector("#edit-handles")?.remove();
 		clone.style.transform += `translateX(${dx * 100}%) translateY(${dy * 100}%)`;
-		camera.append(clone);
+		hovered.tile.after(hovered.tile.previousSibling.wholeText || "", clone);
 		mergeTransforms(clone);
 	},
 	size: ({ dx, dy, transform, delta, width, height}) => {
