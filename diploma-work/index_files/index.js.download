@@ -108,16 +108,21 @@ function handleMouseDown(event) {
 
 	if (!hovered.element) return;
 
-	handleEdit();
+	toggleHandleEdit();
 
 }
 
 function handleMouseMove(event) {
-	if (!document.pointerLockElement) return;
-	if (edit.preventMouse) return;
-	rotation.y += event.movementX * MOUSE_SENSITIVITY;
-	rotation.x -= event.movementY * MOUSE_SENSITIVITY;
-	rotation.x = Math.min(Math.PI / 2, Math.max(rotation.x, -Math.PI / 2));
+	if (!document.pointerLockElement) {
+		return;
+	}
+
+	if (!edit.preventMouse) {
+		rotation.y += event.movementX * MOUSE_SENSITIVITY;
+		rotation.x -= event.movementY * MOUSE_SENSITIVITY;
+		rotation.x = Math.min(Math.PI / 2, Math.max(rotation.x, -Math.PI / 2));
+		return;
+	}
 }
 
 function handleKeydown({ code, repeat }) {
@@ -194,7 +199,7 @@ function matrixFromTransform(transform) {
 }
 
 function mergeTransforms(elem) {
-	const { transform } = window.getComputedStyle(elem);
+	const { transform } = getComputedStyle(elem);
 	if (elem.style.transform?.match(/scale|skew|matrix3d/)) {
 		elem.style.transform = transform;
 	} else {
@@ -225,7 +230,7 @@ function exitEdit() {
 	if (hovered.tile) mergeTransforms(hovered.tile);
 }
 
-function handleEdit() {
+function toggleHandleEdit() {
 	edit.controller?.abort();
 	const {signal} = edit.controller = new AbortController();
 
