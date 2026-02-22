@@ -1,16 +1,3 @@
-/* body { */
-/*	 margin: 0; */
-/* } */
-
-/* * { */
-/*	 box-sizing: border-box; */
-/* } */
-
-/* body:not([data-gamemode="EDIT"]) .warp { */
-/*	 visibility: hidden; */
-/* } */
-
-
 #crosshair {
 	position: absolute;
 	left: 50%;
@@ -78,25 +65,3 @@
 	[data-edit-tool="move"] & { background-color: skyblue; }
 	[data-edit-tool="size"] & { background-color: purple; }
 }
-
-/* .tile { */
-/*	 position: absolute; */
-/*	 width: 100px; */
-/*	 height: 100px; */
-/*	 transform-origin: 0 0; */
-/*	 box-sizing: border-box; */
-/**/
-/*	 &.active { */
-/*		 border: 2px solid red; */
-/*	 } */
-/**/
-/*	 .flip & { */
-/*		 backface-visibility: hidden; */
-/*	 } */
-/* } */
-
-/* #player-shadow { */
-/*	 background-color: #00000030; */
-/*	 border-radius: 50%; */
-/*	 box-shadow: 0px 0px 20px 20px #00000030; */
-/* } */
