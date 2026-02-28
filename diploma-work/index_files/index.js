@@ -285,8 +285,13 @@ function updateHoveredTiles() {
 }
 
 function handleEditToolChange(tool) {
-	edit.tool = tool;
-	document.body.dataset.editTool = tool;
+	if (tool === edit.tool) {
+		edit.tool = null;
+		delete document.body.dataset.editTool;
+	} else {
+		edit.tool = tool;
+		document.body.dataset.editTool = tool;
+	}
 }
 
 
