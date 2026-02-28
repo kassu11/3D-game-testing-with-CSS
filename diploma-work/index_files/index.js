@@ -31,7 +31,7 @@ const vec = {
 	normalize: (a) => {
 		const mag = Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
 		return mag === 0 ? a : { x: a.x / mag, y: a.y / mag, z: a.z / mag };
-	}
+	},
 };
 
 function checkTriangleCollision(p, tri, radius) {
@@ -45,7 +45,7 @@ function checkTriangleCollision(p, tri, radius) {
 	return {
 		x: normal.x * overlap * (dist > 0 ? 1 : -1),
 		y: normal.y * overlap * (dist > 0 ? 1 : -1),
-		z: normal.z * overlap * (dist > 0 ? 1 : -1)
+		z: normal.z * overlap * (dist > 0 ? 1 : -1),
 	};
 }
 
@@ -56,7 +56,7 @@ function getNormal(tri) {
 }
 
 const hovered = { tile: null, element: null };
-const tiles = [];
+const faces = [];
 
 const edit = {
 	tool: document.body.dataset.editTool,
@@ -133,17 +133,14 @@ function movePlayer(deltaTime) {
 	nextPos.x -= (moveZ * Math.sin(rotation.y) + moveX * Math.cos(rotation.y)) * speed;
 	nextPos.y += moveY * speed;
 
-	for (const tri of tiles) {
-		if (nextPos.x < tri.minX || nextPos.x > tri.maxX || nextPos.y < tri.minY || nextPos.y > tri.maxY || nextPos.z < tri.minZ || nextPos.z > tri.maxZ) {
-			continue;
-		}
-
+	for (const tri of faces) {
+		if (nextPos.x < tri.minX || nextPos.x > tri.maxX || nextPos.y < tri.minY || nextPos.y > tri.maxY || nextPos.z < tri.minZ || nextPos.z > tri.maxZ) continue;
 		const correction = checkTriangleCollision(nextPos, tri, PLAYER_RADIUS);
-		if (correction) {
-			nextPos.x += correction.x;
-			nextPos.y += correction.y;
-			nextPos.z += correction.z;
-		}
+		if (!correction) continue;
+
+		if ((tri.maxZ - tri.minZ) / 2 < tri.maxY - tri.minY) nextPos.z += correction.z;
+		if ((tri.maxX - tri.minX) / 2 < tri.maxY - tri.minY) nextPos.x += correction.x;
+		nextPos.y += correction.y;
 	}
 
 	position.x = nextPos.x;
@@ -292,7 +289,7 @@ function multiplyMatrix4(a, b) {
 
 function parseAllFacesInsideCamera() {
 	const identyMatrix = matrixFromTransform("");
-	tiles.length = 0;
+	faces.length = 0;
 	Array.prototype.forEach.call(camera.children, child => parseElemFaces(child, identyMatrix));
 }
 
@@ -312,7 +309,7 @@ function addVertices(w, h, m) {
 	const b = [ transformPoint(0, 0, 0, m), transformPoint(w, h, 0, m), transformPoint(0, h, 0, m) ];
 	addBoundingBoxes(a);
 	addBoundingBoxes(b);
-	tiles.push(a, b);
+	faces.push(a, b);
 }
 
 function addBoundingBoxes(vertices) {
