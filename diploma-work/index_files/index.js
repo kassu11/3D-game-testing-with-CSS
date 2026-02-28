@@ -225,14 +225,13 @@ function mergeTransforms(elem) {
 
 function exitEdit() {
 	edit.controller?.abort();
-	edit.controller = new AbortController();
 	edit.preventMouse = false;
 	if (hovered.tile) mergeTransforms(hovered.tile);
 }
 
 function handleEdit() {
 	edit.controller?.abort();
-	const {signal} = edit.controller = new AbortController();
+	const { signal } = edit.controller = new AbortController();
 
 	if (!edit.tool || edit.preventMouse || !hovered.element?.classList.contains("edit-handle")) return exitEdit();
 
@@ -246,19 +245,17 @@ function handleEdit() {
 
 	const width = parseInt(hovered.tile.style.width) || 0;
 	const height = parseInt(hovered.tile.style.height) || 0;
-	const transform = hovered.tile.style.transform || "";
+	const { transform } = hovered.tile.style;
 	let movementRaw = 0;
 
 	edit.preventMouse = true;
 
 	window.addEventListener("keydown", event => {
-		if (event.code === "Escape" || (event.ctrlKey && event.code === "KeyZ")) {
-			hovered.tile.style.height = height + "px";
-			hovered.tile.style.width = width + "px";
-			hovered.tile.style.transform = transform;
-			event.stopPropagation();
-			exitEdit();
-		}
+		if (!event.ctrlKey || event.code !== "KeyZ") return;
+		exitEdit();
+		hovered.tile.style.height = height + "px";
+		hovered.tile.style.width = width + "px";
+		hovered.tile.style.transform = transform;
 	}, { signal });
 
 	window.addEventListener("mousemove", event => {
