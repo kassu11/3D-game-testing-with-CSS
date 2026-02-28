@@ -20,6 +20,7 @@ const rotation = { x: 0, y: 0, z: 0 };
 const activeKeys = new Set();
 
 const hovered = { tile: null, element: null };
+const tiles = [];
 
 const edit = {
 	tool: document.body.dataset.editTool,
@@ -223,6 +224,52 @@ function mergeTransforms(elem) {
 	}
 }
 
+function multiplyMatrix4(a, b) {
+	const c = new Float32Array(16);
+	for (let j = 0; j < 4; j++) {
+		for (let i = 0; i < 4; i++) {
+			let sum = 0;
+			for (let k = 0; k < 4; k++) sum += a[k * 4 + j] * b[i * 4 + k];
+			c[i * 4 + j] = sum;
+		}
+	}
+	return c;
+}
+
+function parseAllFacesInsideCamera() {
+	const identyMatrix = matrixFromTransform("");
+	tiles.length = 0;
+	Array.prototype.forEach.call(camera.children, child => parseElemFaces(child, identyMatrix));
+}
+
+function parseElemFaces(elem, matrix) {
+	const { width, height, transform } = getComputedStyle(elem);
+	const matrix2 = multiplyMatrix4(matrix, matrixFromTransform(transform));
+
+	Array.prototype.forEach.call(elem.children, child => parseElemFaces(child, matrix2));
+
+	if (!elem.classList.contains("tile")) return;
+	addVertices(parseInt(width), parseInt(height), matrix2);
+}
+
+
+function addVertices(width, height, matrix) {
+	tiles.push([
+		transformPoint(0, 0, 0, matrix),
+		transformPoint(width, 0, 0, matrix),
+		transformPoint(width, height, 0, matrix),
+		transformPoint(0, height, 0, matrix),
+	]);
+}
+
+function transformPoint(x, y, z, matrix) {
+	return {
+		x: matrix[0] * x + matrix[4] * y + matrix[8] * z + matrix[12],
+		y: matrix[1] * x + matrix[5] * y + matrix[9] * z + matrix[13],
+		z: matrix[2] * x + matrix[6] * y + matrix[10] * z + matrix[14],
+	};
+}
+
 function exitEdit() {
 	edit.controller?.abort();
 	edit.preventMouse = false;
@@ -305,6 +352,8 @@ window.addEventListener("blur", handleBlur);
 
 document.querySelector("#edit-handles")?.remove();
 document.querySelectorAll(".hovered")?.forEach(elem => elem.classList.remove("hovered"));
+
+parseAllFacesInsideCamera();
 
 window.requestAnimationFrame((previousTime) =>
 	window.requestAnimationFrame((currentTime) => renderLoop(currentTime, previousTime))
