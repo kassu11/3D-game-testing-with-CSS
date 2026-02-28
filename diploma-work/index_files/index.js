@@ -253,13 +253,10 @@ function parseElemFaces(elem, matrix) {
 }
 
 
-function addVertices(width, height, matrix) {
-	tiles.push([
-		transformPoint(0, 0, 0, matrix),
-		transformPoint(width, 0, 0, matrix),
-		transformPoint(width, height, 0, matrix),
-		transformPoint(0, height, 0, matrix),
-	]);
+function addVertices(w, h, m) {
+	const a = [ transformPoint(0, 0, 0, m), transformPoint(w, 0, 0, m), transformPoint(w, h, 0, m) ];
+	const b = [ transformPoint(0, 0, 0, m), transformPoint(w, h, 0, m), transformPoint(0, h, 0, m) ];
+	tiles.push(a, b);
 }
 
 function transformPoint(x, y, z, matrix) {
