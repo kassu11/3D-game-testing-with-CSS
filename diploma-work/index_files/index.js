@@ -253,9 +253,9 @@ function handleEdit() {
 	window.addEventListener("keydown", event => {
 		if (!event.ctrlKey || event.code !== "KeyZ") return;
 		exitEdit();
+		hovered.tile.style.transform = transform;
 		hovered.tile.style.height = height + "px";
 		hovered.tile.style.width = width + "px";
-		hovered.tile.style.transform = transform;
 	}, { signal });
 
 	window.addEventListener("mousemove", event => {
