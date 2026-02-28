@@ -10,6 +10,7 @@ const camera = document.querySelector(".camera#world-camera");
 // =============================================================================
 
 const MOUSE_SENSITIVITY = 0.005;
+const PLAYER_RADIUS = 50;
 
 // =============================================================================
 // STATE
@@ -18,6 +19,41 @@ const MOUSE_SENSITIVITY = 0.005;
 const position = { x: 0, y: 0, z: 0 };
 const rotation = { x: 0, y: 0, z: 0 };
 const activeKeys = new Set();
+
+const vec = {
+	sub: (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z }),
+	dot: (a, b) => a.x * b.x + a.y * b.y + a.z * b.z,
+	cross: (a, b) => ({
+		x: a.y * b.z - a.z * b.y,
+		y: a.z * b.x - a.x * b.z,
+		z: a.x * b.y - a.y * b.x
+	}),
+	normalize: (a) => {
+		const mag = Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+		return mag === 0 ? a : { x: a.x / mag, y: a.y / mag, z: a.z / mag };
+	}
+};
+
+function checkTriangleCollision(p, tri, radius) {
+	const normal = getNormal(tri);
+	const dist = vec.dot(vec.sub(p, tri[0]), normal);
+
+	if (Math.abs(dist) > radius) return null;
+
+	const overlap = radius - Math.abs(dist);
+
+	return {
+		x: normal.x * overlap * (dist > 0 ? 1 : -1),
+		y: normal.y * overlap * (dist > 0 ? 1 : -1),
+		z: normal.z * overlap * (dist > 0 ? 1 : -1)
+	};
+}
+
+function getNormal(tri) {
+	const edge1 = vec.sub(tri[1], tri[0]);
+	const edge2 = vec.sub(tri[2], tri[0]);
+	return vec.normalize(vec.cross(edge1, edge2));
+}
 
 const hovered = { tile: null, element: null };
 const tiles = [];
@@ -92,9 +128,27 @@ function movePlayer(deltaTime) {
 		moveZ /= length;
 	}
 
-	position.z += (moveZ * Math.cos(rotation.y) - moveX * Math.sin(rotation.y)) * speed;
-	position.x -= (moveZ * Math.sin(rotation.y) + moveX * Math.cos(rotation.y)) * speed;
-	position.y += moveY * speed;
+	const nextPos = { ...position };
+	nextPos.z += (moveZ * Math.cos(rotation.y) - moveX * Math.sin(rotation.y)) * speed;
+	nextPos.x -= (moveZ * Math.sin(rotation.y) + moveX * Math.cos(rotation.y)) * speed;
+	nextPos.y += moveY * speed;
+
+	for (const tri of tiles) {
+		if (nextPos.x < tri.minX || nextPos.x > tri.maxX || nextPos.y < tri.minY || nextPos.y > tri.maxY || nextPos.z < tri.minZ || nextPos.z > tri.maxZ) {
+			continue;
+		}
+
+		const correction = checkTriangleCollision(nextPos, tri, PLAYER_RADIUS);
+		if (correction) {
+			nextPos.x += correction.x;
+			nextPos.y += correction.y;
+			nextPos.z += correction.z;
+		}
+	}
+
+	position.x = nextPos.x;
+	position.y = nextPos.y;
+	position.z = nextPos.z;
 }
 
 // =============================================================================
@@ -256,7 +310,20 @@ function parseElemFaces(elem, matrix) {
 function addVertices(w, h, m) {
 	const a = [ transformPoint(0, 0, 0, m), transformPoint(w, 0, 0, m), transformPoint(w, h, 0, m) ];
 	const b = [ transformPoint(0, 0, 0, m), transformPoint(w, h, 0, m), transformPoint(0, h, 0, m) ];
+	addBoundingBoxes(a);
+	addBoundingBoxes(b);
 	tiles.push(a, b);
+}
+
+function addBoundingBoxes(vertices) {
+	vertices.forEach(v => {
+		vertices.minX = Math.min(v.x - PLAYER_RADIUS, vertices.minX ?? v.x);
+		vertices.maxX = Math.max(v.x + PLAYER_RADIUS, vertices.maxX ?? v.x);
+		vertices.minY = Math.min(v.y - PLAYER_RADIUS, vertices.minY ?? v.y);
+		vertices.maxY = Math.max(v.y + PLAYER_RADIUS, vertices.maxY ?? v.y);
+		vertices.minZ = Math.min(v.z - PLAYER_RADIUS, vertices.minZ ?? v.z);
+		vertices.maxZ = Math.max(v.z + PLAYER_RADIUS, vertices.maxZ ?? v.z);
+	});
 }
 
 function transformPoint(x, y, z, matrix) {
