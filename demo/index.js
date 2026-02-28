@@ -129,17 +129,15 @@ function matrixFromTransform(transform) {
 }
 
 function multiplyMatrix4(a, b) {
-  const out = new Array(16);
-  for (let row = 0; row < 4; row++) {
-    for (let col = 0; col < 4; col++) {
-      out[col * 4 + row] =
-        a[0 * 4 + row] * b[col * 4 + 0] +
-        a[1 * 4 + row] * b[col * 4 + 1] +
-        a[2 * 4 + row] * b[col * 4 + 2] +
-        a[3 * 4 + row] * b[col * 4 + 3];
-    }
-  }
-  return out;
+	const c = new Float32Array(16);
+	for (let j = 0; j < 4; j++) {
+		for (let i = 0; i < 4; i++) {
+			let sum = 0;
+			for (let k = 0; k < 4; k++) sum += a[k * 4 + j] * b[i * 4 + k];
+			c[i * 4 + j] = sum;
+		}
+	}
+	return c;
 }
 
 function getComputedMatrixFromElem(elem) {
