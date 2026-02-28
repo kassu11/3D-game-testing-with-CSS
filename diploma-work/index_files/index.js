@@ -134,6 +134,8 @@ function handleKeyup({ code }) {
 	activeKeys.delete(code);
 }
 
+const handleBlur = () => activeKeys.clear();
+
 
 // =============================================================================
 // RENDER LOOP & FPS
@@ -296,6 +298,8 @@ window.addEventListener("mousemove", handleMouseMove);
 window.addEventListener("mousedown", handleMouseDown);
 window.addEventListener("keydown", handleKeydown);
 window.addEventListener("keyup", handleKeyup);
+
+window.addEventListener("blur", handleBlur);
 
 document.querySelector("#edit-handles")?.remove();
 document.querySelectorAll(".hovered")?.forEach(elem => elem.classList.remove("hovered"));
