@@ -125,6 +125,9 @@ function handleKeydown({ code, repeat }) {
 	activeKeys.add(code);
 
 	if (code in edit.keys) handleEditToolChange(edit.keys[code]);
+	if (code === "KeyR") {
+		Object.assign(position, Object.assign(rotation, {x: 0, y: 0, z: 0}));
+	}
 }
 
 function handleKeyup({ code }) {
