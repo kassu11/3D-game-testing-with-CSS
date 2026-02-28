@@ -56,7 +56,7 @@ function getNormal(tri) {
 }
 
 const hovered = { tile: null, element: null };
-const faces = [];
+const tiles = [];
 
 const edit = {
 	tool: document.body.dataset.editTool,
@@ -128,31 +128,26 @@ function movePlayer(deltaTime) {
 		moveZ /= length;
 	}
 
-	const nextPos = { ...position };
-	nextPos.z += (moveZ * Math.cos(rotation.y) - moveX * Math.sin(rotation.y)) * speed;
-	nextPos.x -= (moveZ * Math.sin(rotation.y) + moveX * Math.cos(rotation.y)) * speed;
-	nextPos.y += moveY * speed;
+	position.z += (moveZ * Math.cos(rotation.y) - moveX * Math.sin(rotation.y)) * speed;
+	position.x -= (moveZ * Math.sin(rotation.y) + moveX * Math.cos(rotation.y)) * speed;
+	position.y += moveY * speed;
 
-	for (const tri of faces) {
-		if (nextPos.x < tri.minX || nextPos.x > tri.maxX || nextPos.y < tri.minY || nextPos.y > tri.maxY || nextPos.z < tri.minZ || nextPos.z > tri.maxZ) continue;
-		const correction = checkTriangleCollision(nextPos, tri, PLAYER_RADIUS);
+	for (const tri of tiles) {
+		if (position.x < tri.minX || position.x > tri.maxX || position.y < tri.minY || position.y > tri.maxY || position.z < tri.minZ || position.z > tri.maxZ) continue;
+		const correction = checkTriangleCollision(position, tri, PLAYER_RADIUS);
 		if (!correction) continue;
 
-		if ((tri.maxZ - tri.minZ) / 2 < tri.maxY - tri.minY) nextPos.z += correction.z;
-		if ((tri.maxX - tri.minX) / 2 < tri.maxY - tri.minY) nextPos.x += correction.x;
-		nextPos.y += correction.y;
+		position.x += correction.x;
+		position.y += correction.y;
+		position.z += correction.z;
 	}
-
-	position.x = nextPos.x;
-	position.y = nextPos.y;
-	position.z = nextPos.z;
 }
 
 // =============================================================================
 // INPUT HANDLERS
 // =============================================================================
 
-function handleMouseDown(event) {
+function handleMouseDown() {
 	if (!document.pointerLockElement) {
 		document.body.requestPointerLock({ unadjustedMovement: true });
 		return;
@@ -287,17 +282,17 @@ function multiplyMatrix4(a, b) {
 	return c;
 }
 
-function parseAllFacesInsideCamera() {
+function parseAllTilesInsideCamera() {
 	const identyMatrix = matrixFromTransform("");
-	faces.length = 0;
-	Array.prototype.forEach.call(camera.children, child => parseElemFaces(child, identyMatrix));
+	tiles.length = 0;
+	Array.prototype.forEach.call(camera.children, child => parseElemTiles(child, identyMatrix));
 }
 
-function parseElemFaces(elem, matrix) {
+function parseElemTiles(elem, matrix) {
 	const { width, height, transform } = getComputedStyle(elem);
 	const matrix2 = multiplyMatrix4(matrix, matrixFromTransform(transform));
 
-	Array.prototype.forEach.call(elem.children, child => parseElemFaces(child, matrix2));
+	Array.prototype.forEach.call(elem.children, child => parseElemTiles(child, matrix2));
 
 	if (!elem.classList.contains("tile")) return;
 	addVertices(parseInt(width), parseInt(height), matrix2);
@@ -309,7 +304,7 @@ function addVertices(w, h, m) {
 	const b = [ transformPoint(0, 0, 0, m), transformPoint(w, h, 0, m), transformPoint(0, h, 0, m) ];
 	addBoundingBoxes(a);
 	addBoundingBoxes(b);
-	faces.push(a, b);
+	tiles.push(a, b);
 }
 
 function addBoundingBoxes(vertices) {
@@ -414,7 +409,7 @@ window.addEventListener("blur", handleBlur);
 document.querySelector("#edit-handles")?.remove();
 document.querySelectorAll(".hovered")?.forEach(elem => elem.classList.remove("hovered"));
 
-parseAllFacesInsideCamera();
+parseAllTilesInsideCamera();
 
 window.requestAnimationFrame((previousTime) =>
 	window.requestAnimationFrame((currentTime) => renderLoop(currentTime, previousTime))
