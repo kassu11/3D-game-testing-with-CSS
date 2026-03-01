@@ -1,6 +1,7 @@
 # Memory leak when using CSS variables
 
 > [!IMPORTANT]
+> PC specs: RTX 3070, 16 GB of DDR5 RAM, i7-12700F
 > Browser version used
 > Brave 1.85.116 (Official Build) (64-bit)
 > Chromium: 143.0.7499.110
@@ -32,3 +33,5 @@ camera.style.transform = `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) ro
 ```
 
 - FPS does not drop in Firefox and everything works just as expected
+
+> NONE: After upgrading my RAM to 64 GB the issue is much less noticable
