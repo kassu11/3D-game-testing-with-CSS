@@ -144,7 +144,7 @@ function movePlayer(deltaTime) {
 	position.y += moveY * speed;
 
 	for (const face of faces) {
-		if (position.x < face.minX || position.x > face.maxX || position.y < face.minY || position.y > face.maxY || position.z < face.minZ || position.z > face.maxZ) continue;
+		if (position.x <= face.minX || position.x >= face.maxX || position.y <= face.minY || position.y >= face.maxY || position.z <= face.minZ || position.z >= face.maxZ) continue;
 		const correction = checkTriangleCollision(position, face, PLAYER_RADIUS);
 		if (!correction) continue;
 
