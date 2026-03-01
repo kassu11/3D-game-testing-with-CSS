@@ -18,7 +18,16 @@ const PLAYER_RADIUS = 50;
 
 const position = { x: 0, y: 0, z: 0 };
 const rotation = { x: 0, y: 0, z: 0 };
+const hovered = { tile: null, element: null };
 const activeKeys = new Set();
+const faces = [];
+
+const edit = {
+	tool: document.body.dataset.editTool,
+	preventMouse: false,
+	controller: null,
+	keys: { Digit1: "add", Digit2: "remove", Digit3: "move", Digit4: "rotate", Digit5: "size" },
+}
 
 const vec = {
 	sub: (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z }),
@@ -34,6 +43,24 @@ const vec = {
 	},
 };
 
+function getNormal(tri) {
+	const edge1 = vec.sub(tri[1], tri[0]);
+	const edge2 = vec.sub(tri[2], tri[0]);
+	return vec.normalize(vec.cross(edge1, edge2));
+}
+
+function multiplyMatrix4(a, b) {
+	const c = new Float32Array(16);
+	for (let j = 0; j < 4; j++) {
+		for (let i = 0; i < 4; i++) {
+			let sum = 0;
+			for (let k = 0; k < 4; k++) sum += a[k * 4 + j] * b[i * 4 + k];
+			c[i * 4 + j] = sum;
+		}
+	}
+	return c;
+}
+
 function checkTriangleCollision(p, tri, radius) {
 	const normal = getNormal(tri);
 	const dist = vec.dot(vec.sub(p, tri[0]), normal);
@@ -47,22 +74,6 @@ function checkTriangleCollision(p, tri, radius) {
 		y: normal.y * overlap * (dist > 0 ? 1 : -1),
 		z: normal.z * overlap * (dist > 0 ? 1 : -1),
 	};
-}
-
-function getNormal(tri) {
-	const edge1 = vec.sub(tri[1], tri[0]);
-	const edge2 = vec.sub(tri[2], tri[0]);
-	return vec.normalize(vec.cross(edge1, edge2));
-}
-
-const hovered = { tile: null, element: null };
-const tiles = [];
-
-const edit = {
-	tool: document.body.dataset.editTool,
-	preventMouse: false,
-	controller: null,
-	keys: { Digit1: "add", Digit2: "remove", Digit3: "move", Digit4: "rotate", Digit5: "size" },
 }
 
 const editActions = {
@@ -132,9 +143,9 @@ function movePlayer(deltaTime) {
 	position.x -= (moveZ * Math.sin(rotation.y) + moveX * Math.cos(rotation.y)) * speed;
 	position.y += moveY * speed;
 
-	for (const tri of tiles) {
-		if (position.x < tri.minX || position.x > tri.maxX || position.y < tri.minY || position.y > tri.maxY || position.z < tri.minZ || position.z > tri.maxZ) continue;
-		const correction = checkTriangleCollision(position, tri, PLAYER_RADIUS);
+	for (const face of faces) {
+		if (position.x < face.minX || position.x > face.maxX || position.y < face.minY || position.y > face.maxY || position.z < face.minZ || position.z > face.maxZ) continue;
+		const correction = checkTriangleCollision(position, face, PLAYER_RADIUS);
 		if (!correction) continue;
 
 		position.x += correction.x;
@@ -270,21 +281,9 @@ function mergeTransforms(elem) {
 	}
 }
 
-function multiplyMatrix4(a, b) {
-	const c = new Float32Array(16);
-	for (let j = 0; j < 4; j++) {
-		for (let i = 0; i < 4; i++) {
-			let sum = 0;
-			for (let k = 0; k < 4; k++) sum += a[k * 4 + j] * b[i * 4 + k];
-			c[i * 4 + j] = sum;
-		}
-	}
-	return c;
-}
-
 function parseAllTilesInsideCamera() {
 	const identyMatrix = matrixFromTransform("");
-	tiles.length = 0;
+	faces.length = 0;
 	Array.prototype.forEach.call(camera.children, child => parseElemTiles(child, identyMatrix));
 }
 
@@ -298,13 +297,12 @@ function parseElemTiles(elem, matrix) {
 	addVertices(parseInt(width), parseInt(height), matrix2);
 }
 
-
 function addVertices(w, h, m) {
 	const a = [ transformPoint(0, 0, 0, m), transformPoint(w, 0, 0, m), transformPoint(w, h, 0, m) ];
 	const b = [ transformPoint(0, 0, 0, m), transformPoint(w, h, 0, m), transformPoint(0, h, 0, m) ];
 	addBoundingBoxes(a);
 	addBoundingBoxes(b);
-	tiles.push(a, b);
+	faces.push(a, b);
 }
 
 function addBoundingBoxes(vertices) {
