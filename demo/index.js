@@ -44,7 +44,7 @@ const editModeKeyMaps = {
 // STATE
 // =============================================================================
 
-let gameMode = "EDIT";
+let gameMode = "SURVIVAL";
 let mode = "move";
 let isOnGround = false;
 let editingTileMode = false;
