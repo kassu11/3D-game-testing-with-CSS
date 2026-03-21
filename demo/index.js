@@ -22,7 +22,7 @@ const cornerD = document.querySelector("#cornerD") ?? document.createElement("di
 // CONSTANTS
 // =============================================================================
 
-const GRAVITY = 0.04;
+const GRAVITY = 30;
 const JUMP_FORCE = -10;
 const MAX_SLOPE_COS = 0.707; // cos(45°)
 const PLAYER_RADIUS = 50;
@@ -210,7 +210,7 @@ function createTiles() {
 // =============================================================================
 
 function movePlayer(deltaTime) {
-  const moveSpeed = (gameMode === "EDIT" ? 3 : (userKeys.has("ShiftLeft") ? 1.75 : 1)) * (600 * deltaTime) / 1000;
+  const moveSpeed = (gameMode === "EDIT" ? 3 : (userKeys.has("ShiftLeft") ? 1.75 : 1)) * (600 * deltaTime);
 
   if (gameMode !== "EDIT") {
     forces.y += GRAVITY * deltaTime;
@@ -792,7 +792,7 @@ function updateHoveredTiles() {
 function updateFpsCounter(deltaTime) {
   fpsValues[fpsIndex++ % fpsValues.length] = deltaTime;
   const sum = fpsValues.reduce((acc, v) => acc + v, 0);
-  fpsElement.textContent = Math.round((1000 * fpsValues.length) / sum);
+  fpsElement.textContent = Math.round((fpsValues.length) / sum);
 }
 
 function renderLoop(currentTime, previousTime) {
@@ -806,8 +806,8 @@ function renderLoop(currentTime, previousTime) {
 
   skyboxCamera.style.transform = `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) `
 
-  const deltaTime = currentTime - previousTime;
-  if (deltaTime > 10000) {
+  const deltaTime = (currentTime - previousTime) / 1000;
+  if (deltaTime > 5) {
     return;
   }
 
