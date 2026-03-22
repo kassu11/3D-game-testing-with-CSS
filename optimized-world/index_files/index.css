@@ -45,23 +45,21 @@
 	position: relative;
 	width: 100%;
 	height: 100%;
-	opacity: 0;
 	pointer-events: all;
 
 	:where([data-edit-tool="remove"], [data-edit-tool="move"]) &,
 	:where([data-edit-tool="add"], [data-edit-tool="size"]) &:not(:nth-child(5)),
 	:where([data-edit-tool="rotate"]) &:nth-child(even) {
-		background-color: black;
-		opacity: .5;
+		background-color: color-mix(in hsl, transparent 60%, currentColor);
 
 		&.hovered {
-			opacity: 1;
+			background-color: currentColor;
 		}
 	}
 
-	[data-edit-tool="add"] & { background-color: lime; }
-	[data-edit-tool="remove"] & { background-color: crimson; opacity: 1; }
-	[data-edit-tool="rotate"] & { background-color: orange; }
-	[data-edit-tool="move"] & { background-color: skyblue; }
-	[data-edit-tool="size"] & { background-color: purple; }
+	[data-edit-tool="add"] & { color: lime; }
+	[data-edit-tool="remove"] & { color: crimson; background-color: currentColor; }
+	[data-edit-tool="rotate"] & { color: orange; }
+	[data-edit-tool="move"] & { color: skyblue; }
+	[data-edit-tool="size"] & { color: purple; }
 }
