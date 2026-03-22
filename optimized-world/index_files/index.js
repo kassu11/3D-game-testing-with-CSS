@@ -422,15 +422,13 @@ document.querySelectorAll(".hovered")?.forEach(elem => elem.classList.remove("ho
 
 parseAllTilesInsideCamera();
 
-// window.requestAnimationFrame((previousTime) =>
-// 	window.requestAnimationFrame((currentTime) => renderLoop(currentTime, previousTime))
-// );
+window.requestAnimationFrame((previousTime) =>
+	window.requestAnimationFrame(currentTime => loop(currentTime, previousTime))
+);
 
-let lastTime = performance.now();
-setInterval(() => {
-	const t = lastTime;
-	lastTime = performance.now();
-
-	const alpha = physicsLoop((lastTime - t) / 1000);
-	renderLoop(alpha);
-}, 1000 / 200);
+function loop(currentTime, previousTime) {
+  window.requestAnimationFrame((t) => loop(t, currentTime));
+  const deltaTime = (currentTime - previousTime) / 1000;
+  const alpha = physicsLoop(deltaTime);
+  renderLoop(alpha);
+}
