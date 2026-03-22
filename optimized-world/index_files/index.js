@@ -29,6 +29,7 @@ const hovered = { tile: null, element: null };
 const activeKeys = new Set();
 let isOnGround = false;
 const faces = [];
+const warps = [];
 let gameMode = document.body.dataset.gameMode;
 
 const edit = {
@@ -282,6 +283,32 @@ function applyMovementStep(vel) {
 			}
 		}
 	}
+
+	for (const face of warps) {
+		if (curPosition.x <= face.minX || curPosition.x >= face.maxX || curPosition.y <= face.minY || curPosition.y >= face.maxY || curPosition.z <= face.minZ || curPosition.z >= face.maxZ) continue;
+		const normal = face.normal;
+		const distToPlane = vec.dot(vec.sub(curPosition, face[0]), normal);
+		if (Math.abs(distToPlane) > PLAYER_RADIUS) continue;
+
+		const closestOnPlane = {
+			x: curPosition.x - normal.x * distToPlane,
+			y: curPosition.y - normal.y * distToPlane,
+			z: curPosition.z - normal.z * distToPlane,
+		};
+
+		const inTriangle = isPointInTriangle3D(closestOnPlane, face[0], face[1], face[2])
+
+		if (inTriangle) {
+			const start = warps[face.id].center;
+			const end = warps[face.destination].center;
+			curPosition.x += end.x - start.x;
+			curPosition.y += end.y - start.y;
+			curPosition.z += end.z - start.z;
+			oldPosition.x += end.x - start.x;
+			oldPosition.y += end.y - start.y;
+			oldPosition.z += end.z - start.z;
+		}
+	}
 }
 
 function closestPointOnSegment(p, v, w) {
@@ -468,6 +495,7 @@ function mergeTransforms(elem) {
 function parseAllTilesInsideCamera() {
 	const identyMatrix = matrixFromTransform("");
 	faces.length = 0;
+	warps.length = 0;
 	Array.prototype.forEach.call(camera.children, child => parseElemTiles(child, identyMatrix));
 }
 
@@ -477,11 +505,11 @@ function parseElemTiles(elem, matrix) {
 
 	Array.prototype.forEach.call(elem.children, child => parseElemTiles(child, matrix2));
 
-	if (!elem.classList.contains("tile")) return;
-	addVertices(parseInt(width), parseInt(height), matrix2);
+	if (elem.classList.contains("tile")) addWallVertices(parseInt(width), parseInt(height), matrix2);
+	else if (elem.classList.contains("warp")) addWarpVertices(elem, parseInt(width), parseInt(height), matrix2);
 }
 
-function addVertices(w, h, m) {
+function addWallVertices(w, h, m) {
 	const a = [ transformPoint(0, 0, 0, m), transformPoint(w, 0, 0, m), transformPoint(w, h, 0, m) ];
 	const b = [ transformPoint(0, 0, 0, m), transformPoint(w, h, 0, m), transformPoint(0, h, 0, m) ];
 	[a, b].forEach(tri => {
@@ -489,6 +517,29 @@ function addVertices(w, h, m) {
 		tri.normal = getNormal(tri);
 	});
 	faces.push(a, b);
+}
+
+function addWarpVertices(elem, w, h, m) {
+	const a = [ transformPoint(0, 0, 0, m), transformPoint(w, 0, 0, m), transformPoint(w, h, 0, m) ];
+	const b = [ transformPoint(0, 0, 0, m), transformPoint(w, h, 0, m), transformPoint(0, h, 0, m) ];
+	const points = [a[0], a[1], b[1], b[2]];
+	[a, b].forEach(tri => {
+		addBoundingBoxes(tri);
+		tri.normal = getNormal(tri);
+		tri.center = points.reduce((acc, { x, y, z }) => ({ x: acc.x + x, y: acc.y + y, z: acc.z + z }), { x: 0, y: 0, z: 0 });
+		tri.id = elem.id;
+
+		for (const key in tri.center) {
+			tri.center[key] = tri.center[key] / points.length;
+		}
+
+		if (elem.dataset.destination) {
+			warps.push(tri);
+			tri.destination = elem.dataset.destination;
+		}
+
+		warps[tri.id] = tri;
+	});
 }
 
 function addBoundingBoxes(vertices) {

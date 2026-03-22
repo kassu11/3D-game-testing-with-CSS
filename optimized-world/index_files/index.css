@@ -41,8 +41,13 @@
 	grid-template-rows: repeat(3, 1fr);
 }
 
-body:not([data-game-mode="EDIT"]) #edit-handles {
-	display: none;
+body:not([data-game-mode="EDIT"]) {
+	#edit-handles {
+		display: none;
+	}
+	.warp {
+		visibility: hidden;
+	}
 }
 
 body[data-game-mode="EDIT"][data-edit-tool="flip"] .tile {
