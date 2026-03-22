@@ -11,17 +11,22 @@ const camera = document.querySelector(".camera#world-camera");
 
 const MOUSE_SENSITIVITY = 0.005;
 const PLAYER_RADIUS = 50;
+const GRAVITY = .3;
+const MAX_SLOPE_COS = 0.707; // cos(45°)
 
 // =============================================================================
 // STATE
 // =============================================================================
 
-const oldPosition = { x: 0, y: 0, z: 0 };
-const curPosition = { x: 0, y: 0, z: 0 };
+const oldPosition = { x: 500, y: -2700, z: 800 };
+const curPosition = { x: 500, y: -2700, z: 800 };
+const forces = { x: 0, y: 0, z: 0 };
 const rotation = { x: 0, y: 0, z: 0 };
 const hovered = { tile: null, element: null };
 const activeKeys = new Set();
+let isOnGround = false;
 const faces = [];
+let gameMode = "SURVIVAL";
 
 const edit = {
 	tool: document.body.dataset.editTool,
@@ -129,10 +134,9 @@ const editHandleDirections = [
 // =============================================================================
 
 function movePlayer(deltaTime) {
-	const speed = 2000 * deltaTime;
+	const speed = 1000 * deltaTime + (gameMode === "EDIT") * 200;
 	let moveX = activeKeys.has("KeyA") - activeKeys.has("KeyD");
 	let moveZ = activeKeys.has("KeyS") - activeKeys.has("KeyW");
-	let moveY = activeKeys.has("ShiftLeft") - activeKeys.has("Space");
 
 	const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
 	if (length > 0) {
@@ -140,20 +144,137 @@ function movePlayer(deltaTime) {
 		moveZ /= length;
 	}
 
+	let velocity = { x: 0, y: forces.y, z: 0 };
+	if (gameMode === "EDIT") {
+		let moveY = activeKeys.has("ShiftLeft") - activeKeys.has("Space");
+		velocity.y += moveY * speed;
+	} else {
+		forces.y += GRAVITY * speed;
+	}
+
 	Object.assign(oldPosition, curPosition);
-	curPosition.z += (moveZ * Math.cos(rotation.y) - moveX * Math.sin(rotation.y)) * speed;
-	curPosition.x -= (moveZ * Math.sin(rotation.y) + moveX * Math.cos(rotation.y)) * speed;
-	curPosition.y += moveY * speed;
+	velocity.z += (moveZ * Math.cos(rotation.y) - moveX * Math.sin(rotation.y)) * speed;
+	velocity.x -= (moveZ * Math.sin(rotation.y) + moveX * Math.cos(rotation.y)) * speed;
+
+	const totalDist = Math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2);
+	const steps = Math.ceil(totalDist / (PLAYER_RADIUS * 0.5));
+
+	const stepVel = {
+		x: velocity.x / steps,
+		y: velocity.y / steps,
+		z: velocity.z / steps
+	};
+
+	for (let s = 0; s < steps; s++) {
+		applyMovementStep(stepVel);
+	}
+
+	// for (const face of faces) {
+	// 	if (curPosition.x <= face.minX || curPosition.x >= face.maxX || curPosition.y <= face.minY || curPosition.y >= face.maxY || curPosition.z <= face.minZ || curPosition.z >= face.maxZ) continue;
+	// 	const correction = checkTriangleCollision(curPosition, face, PLAYER_RADIUS);
+	// 	if (!correction) continue;
+	//
+	// 	curPosition.x += correction.x;
+	// 	curPosition.y += correction.y;
+	// 	curPosition.z += correction.z;
+	// }
+}
+
+
+
+function isPointInTriangle3D(p, a, b, c) {
+	const pa = { x: a.x - p.x, y: a.y - p.y, z: a.z - p.z };
+	const pb = { x: b.x - p.x, y: b.y - p.y, z: b.z - p.z };
+	const pc = { x: c.x - p.x, y: c.y - p.y, z: c.z - p.z };
+
+	const u = vec.cross(pb, pc);
+	const v = vec.cross(pc, pa);
+	const w = vec.cross(pa, pb);
+
+	if (vec.dot(u, v) < -0.001) return false;
+	if (vec.dot(u, w) < -0.001) return false;
+	return true;
+}
+
+function applyMovementStep(vel) {
+	// Move the player by the velocity step
+	curPosition.x += vel.x;
+	curPosition.y += vel.y;
+	curPosition.z += vel.z;
+
+	if (gameMode === "EDIT") return;
 
 	for (const face of faces) {
-		if (curPosition.x <= face.minX || curPosition.x >= face.maxX || curPosition.y <= face.minY || curPosition.y >= face.maxY || curPosition.z <= face.minZ || curPosition.z >= face.maxZ) continue;
-		const correction = checkTriangleCollision(curPosition, face, PLAYER_RADIUS);
-		if (!correction) continue;
+		const normal = face.normal;
+		// const mag = Math.sqrt(rawNormal.x ** 2 + rawNormal.y ** 2 + rawNormal.z ** 2);
+		// if (mag < 1e-6) continue;
+		// const normal = { x: rawNormal.x / mag, y: rawNormal.y / mag, z: rawNormal.z / mag };
 
-		curPosition.x += correction.x;
-		curPosition.y += correction.y;
-		curPosition.z += correction.z;
+		const pa = { x: curPosition.x - face[0].x, y: curPosition.y - face[0].y, z: curPosition.z - face[0].z };
+		const distToPlane = vec.dot(normal, pa);
+		if (Math.abs(distToPlane) > PLAYER_RADIUS) continue;
+
+		const closestOnPlane = {
+			x: curPosition.x - normal.x * distToPlane,
+			y: curPosition.y - normal.y * distToPlane,
+			z: curPosition.z - normal.z * distToPlane,
+		};
+
+		let closestPoint;
+		const inTriangle = isPointInTriangle3D(closestOnPlane, face[0], face[1], face[2])
+
+		if (inTriangle) {
+			closestPoint = closestOnPlane;
+		} else {
+			const edges = [
+				closestPointOnSegment(curPosition, face[0], face[1]),
+				closestPointOnSegment(curPosition, face[1], face[2]),
+				closestPointOnSegment(curPosition, face[2], face[0]),
+			];
+			let minFacingDist = Infinity;
+			for (const edgePt of edges) {
+				const d = (curPosition.x - edgePt.x)**2 + (curPosition.y - edgePt.y)**2 + (curPosition.z - edgePt.z)**2;
+				if (d < minFacingDist) { minFacingDist = d; closestPoint = edgePt; }
+			}
+		}
+
+		const diff = { x: curPosition.x - closestPoint.x, y: curPosition.y - closestPoint.y, z: curPosition.z - closestPoint.z };
+		const distance = Math.sqrt(diff.x**2 + diff.y**2 + diff.z**2);
+
+		if (distance < PLAYER_RADIUS && distance > 0) {
+			const overlap = PLAYER_RADIUS - distance;
+			const resolveDir = { x: diff.x / distance, y: diff.y / distance, z: diff.z / distance };
+			//
+			// slopeCos > 0.707 means the surface is flatter than 45 degrees
+			const slopeCos = vec.dot(resolveDir, { x: 0, y: -1, z: 0 });
+			if (slopeCos > MAX_SLOPE_COS) {
+				isOnGround = true;
+				forces.y = 0;
+				const horizontalDistSq = (curPosition.x - closestPoint.x)**2 + (curPosition.z - closestPoint.z)**2;
+				const verticalNeeded = Math.sqrt(Math.max(0, PLAYER_RADIUS**2 - horizontalDistSq));
+				curPosition.y = closestPoint.y - verticalNeeded;
+			} else {
+				curPosition.x += resolveDir.x * overlap;
+				curPosition.y += resolveDir.y * overlap;
+				curPosition.z += resolveDir.z * overlap;
+				if (slopeCos < -MAX_SLOPE_COS) {
+					forces.y = Math.max(0, forces.y);
+				}
+			}
+		}
 	}
+}
+
+function closestPointOnSegment(p, v, w) {
+  const l2 = (v.x - w.x)**2 + (v.y - w.y)**2 + (v.z - w.z)**2;
+  if (l2 === 0) return v;
+  let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y) + (p.z - v.z) * (w.z - v.z)) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return {
+    x: v.x + t * (w.x - v.x),
+    y: v.y + t * (w.y - v.y),
+    z: v.z + t * (w.z - v.z)
+  };
 }
 
 // =============================================================================
@@ -188,6 +309,15 @@ function handleKeydown({ code, repeat }) {
 	if (code === "KeyR") {
 		Object.assign(curPosition, Object.assign(rotation, {x: 0, y: 0, z: 0}));
 	}
+	if (code === "KeyH") {
+		gameMode = gameMode === "EDIT" ? "SURVIVAL" : "EDIT";
+		forces.y = 0;
+		parseAllTilesInsideCamera();
+	}
+	if (code === "Space" && gameMode !== "EDIT" && isOnGround) {
+		forces.y = -70;
+		isOnGround = false;
+	}
 }
 
 function handleKeyup({ code }) {
@@ -206,11 +336,11 @@ function renderLoop(alpha) {
 		rotateX(${rotation.x}rad) 
 		rotateY(${rotation.y}rad) 
 		rotateZ(${rotation.z}rad) 
-		translate3d(${-oldPosition.x - (curPosition.x - oldPosition.x) * alpha}px, ${-oldPosition.y - (curPosition.y - oldPosition.y) * alpha}px, ${-oldPosition.z - (curPosition.z - oldPosition.z) * alpha}px)`;
+		translate3d(${-oldPosition.x - (curPosition.x - oldPosition.x) * alpha}px, ${150 + -oldPosition.y - (curPosition.y - oldPosition.y) * alpha}px, ${-oldPosition.z - (curPosition.z - oldPosition.z) * alpha}px)`;
 }
 
 let physicsLoopRemainder = 0;
-const PHYSICS_TICK_RATE = 1 / 60;
+const PHYSICS_TICK_RATE = 1 / 20;
 function physicsLoop(deltaTime) {
 	// Make sure deltaTime can't cause too many calculations
 	if (deltaTime > .25) deltaTime = .25;
@@ -313,8 +443,10 @@ function parseElemTiles(elem, matrix) {
 function addVertices(w, h, m) {
 	const a = [ transformPoint(0, 0, 0, m), transformPoint(w, 0, 0, m), transformPoint(w, h, 0, m) ];
 	const b = [ transformPoint(0, 0, 0, m), transformPoint(w, h, 0, m), transformPoint(0, h, 0, m) ];
-	addBoundingBoxes(a);
-	addBoundingBoxes(b);
+	[a, b].forEach(tri => {
+		addBoundingBoxes(tri);
+		tri.normal = getNormal(tri);
+	});
 	faces.push(a, b);
 }
 
