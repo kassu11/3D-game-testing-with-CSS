@@ -205,13 +205,9 @@ function applyMovementStep(vel) {
 	if (gameMode === "EDIT") return;
 
 	for (const face of faces) {
+		if (curPosition.x <= face.minX || curPosition.x >= face.maxX || curPosition.y <= face.minY || curPosition.y >= face.maxY || curPosition.z <= face.minZ || curPosition.z >= face.maxZ) continue;
 		const normal = face.normal;
-		// const mag = Math.sqrt(rawNormal.x ** 2 + rawNormal.y ** 2 + rawNormal.z ** 2);
-		// if (mag < 1e-6) continue;
-		// const normal = { x: rawNormal.x / mag, y: rawNormal.y / mag, z: rawNormal.z / mag };
-
-		const pa = { x: curPosition.x - face[0].x, y: curPosition.y - face[0].y, z: curPosition.z - face[0].z };
-		const distToPlane = vec.dot(normal, pa);
+		const distToPlane = vec.dot(vec.sub(curPosition, face[0]), normal);
 		if (Math.abs(distToPlane) > PLAYER_RADIUS) continue;
 
 		const closestOnPlane = {
