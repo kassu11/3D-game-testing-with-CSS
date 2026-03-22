@@ -41,6 +41,10 @@
 	grid-template-rows: repeat(3, 1fr);
 }
 
+body:not([data-game-mode="EDIT"]) #edit-handles {
+	display: none;
+}
+
 .edit-handle {
 	position: relative;
 	width: 100%;
@@ -62,4 +66,10 @@
 	[data-edit-tool="rotate"] & { color: orange; }
 	[data-edit-tool="move"] & { color: skyblue; }
 	[data-edit-tool="size"] & { color: purple; }
+}
+
+#player-shadow {
+	background-color: #00000030;
+	border-radius: 50%;
+	box-shadow: 0px 0px 20px 20px #00000030;
 }

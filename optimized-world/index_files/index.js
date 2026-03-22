@@ -4,6 +4,7 @@
 
 const viewport = document.querySelector(".viewport#world-viewport");
 const camera = document.querySelector(".camera#world-camera");
+const playerShadow = document.querySelector("#player-shadow");
 
 // =============================================================================
 // CONSTANTS
@@ -13,6 +14,7 @@ const MOUSE_SENSITIVITY = 0.005;
 const PLAYER_RADIUS = 50;
 const GRAVITY = .3;
 const MAX_SLOPE_COS = 0.707; // cos(45°)
+const FOV = 120;
 
 // =============================================================================
 // STATE
@@ -26,7 +28,7 @@ const hovered = { tile: null, element: null };
 const activeKeys = new Set();
 let isOnGround = false;
 const faces = [];
-let gameMode = "SURVIVAL";
+let gameMode = document.body.dataset.gameMode;
 
 const edit = {
 	tool: document.body.dataset.editTool,
@@ -307,6 +309,7 @@ function handleKeydown({ code, repeat }) {
 	}
 	if (code === "KeyH") {
 		gameMode = gameMode === "EDIT" ? "SURVIVAL" : "EDIT";
+		document.body.dataset.gameMode = gameMode;
 		forces.y = 0;
 		parseAllTilesInsideCamera();
 	}
@@ -322,17 +325,33 @@ function handleKeyup({ code }) {
 
 const handleBlur = () => activeKeys.clear();
 
+function handleResize() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const perspective = Math.round(
+    Math.pow((w / 2) * w / 2 + (h / 2) * h / 2, 0.5) /
+      Math.tan(((FOV / 2) * Math.PI) / 180)
+  );
+
+  document.body.style.setProperty("--perspective", perspective + "px");
+}
+
 
 // =============================================================================
 // RENDER LOOP & FPS
 // =============================================================================
 
 function renderLoop(alpha) {
+	const x = oldPosition.x + (curPosition.x - oldPosition.x) * alpha;
+	const y = oldPosition.y + (curPosition.y - oldPosition.y) * alpha;
+	const z = oldPosition.z + (curPosition.z - oldPosition.z) * alpha;
 	camera.style.transform = `
 		rotateX(${rotation.x}rad) 
 		rotateY(${rotation.y}rad) 
 		rotateZ(${rotation.z}rad) 
-		translate3d(${-oldPosition.x - (curPosition.x - oldPosition.x) * alpha}px, ${150 + -oldPosition.y - (curPosition.y - oldPosition.y) * alpha}px, ${-oldPosition.z - (curPosition.z - oldPosition.z) * alpha}px)`;
+		translate3d(${-x}px, ${150 - y}px, ${-z}px)`;
+
+  playerShadow.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(90deg) translateX(-50%) translateY(-50%)`;
 }
 
 let physicsLoopRemainder = 0;
@@ -512,6 +531,8 @@ function handleEdit() {
 }
 
 function updateHoveredTiles() {
+	if (gameMode !== "EDIT") return;
+
 	const centerX = window.innerWidth / 2;
 	const centerY = window.innerHeight / 2;
 	const elem = document.elementFromPoint(centerX, centerY);
@@ -544,11 +565,13 @@ window.addEventListener("keydown", handleKeydown);
 window.addEventListener("keyup", handleKeyup);
 
 window.addEventListener("blur", handleBlur);
+window.addEventListener("resize", handleResize);
 
 document.querySelector("#edit-handles")?.remove();
 document.querySelectorAll(".hovered")?.forEach(elem => elem.classList.remove("hovered"));
 
 parseAllTilesInsideCamera();
+handleResize();
 
 window.requestAnimationFrame((previousTime) =>
 	window.requestAnimationFrame(currentTime => loop(currentTime, previousTime))
