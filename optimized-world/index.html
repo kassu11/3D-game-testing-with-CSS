@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0067)file:///A:/Code/JS/3d-game-testing-with-css/diploma-work/index.html -->
+<!-- saved from url=(0070)file:///A:/Code/JS/3d-game-testing-with-css/optimized-world/index.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,10 +7,10 @@
 		<link rel="stylesheet" href="./index_files/index.css">
 		<script defer="" src="./index_files/index.js"></script>
 	</head>
-	<body style="--perspective: 1000px" data-edit-tool="remove">
+	<body style="--perspective: 936px;" data-edit-tool="shadow" data-game-mode="EDIT">
 		<div id="crosshair">+</div>
 		<div class="viewport">
-			<div class="camera" id="skybox-camera">
+			<div class="camera" id="skybox-camera" style="transform: rotateX(-1.19rad) rotateY(0.195rad) rotateZ(0rad);">
 				<div class="tile skybox" style="background-image: url(&quot;./index_files/textures/sky_34_2k/sky_34_cubemap_2k/ny.png&quot;); width: 510px; height: 510px; transform: translate3d(-255px, 254px, -255px) rotateX(90deg) rotateY(0deg) rotateZ(0deg); background-size: cover;"></div>
 				<div class="tile skybox" style="background-image: url(&quot;./index_files/textures/sky_34_2k/sky_34_cubemap_2k/nz.png&quot;); width: 510px; height: 510px; transform: translate3d(255px, -255px, 254px) rotateX(-180deg) rotateY(0deg) rotateZ(-180deg); background-size: cover;"></div>
 				<div class="tile skybox" style="background-image: url(&quot;./index_files/textures/sky_34_2k/sky_34_cubemap_2k/py.png&quot;); width: 510px; height: 510px; transform: translate3d(-255px, -254px, 255px) rotateX(-90deg) rotateY(0deg) rotateZ(0deg); background-size: cover;"></div>
@@ -20,8 +20,8 @@
 			</div>
 		</div>
 		<div class="viewport" id="world-viewport">
-			<div class="camera" id="world-camera" style="transform: rotateX(-0.03rad) rotateY(-1.555rad) rotateZ(0rad) translate3d(-1443.66px, -27.8px, 877.495px);">
-				<div id="player-shadow" style="width: 10px; height: 10px; transform: translate3d(921.261px, -2928.12px, 676.676px) rotateX(90deg) translateX(-50%) translateY(-50%);"></div>
+			<div class="camera" id="world-camera" style="transform: rotateX(-1.19rad) rotateY(0.195rad) rotateZ(0rad) translate3d(-403.117px, 3455px, -1290.52px);">
+				<div id="player-shadow" style="width: 10px; height: 10px; transform: translate3d(403.117px, -3305px, 1290.52px) rotateX(90deg) translateX(-50%) translateY(-50%);"></div>
 				<div class="tile" style="background-image: url(&quot;./index_files/textures/white_wall_tile004a.png&quot;); width: 510px; height: 510px; transform: translate3d(1515px, -3015px, -1020px) rotateX(0deg) rotateY(-90deg) rotateZ(0deg); background-size: 510px;"></div>
 				<div class="tile" style="background-image: url(&quot;./index_files/textures/white_wall_tile004a.png&quot;); width: 510px; height: 510px; transform: translate3d(1515px, -3015px, -510px) rotateX(0deg) rotateY(-90deg) rotateZ(0deg); background-size: 510px;"></div>
 				<div class="tile" style="background-image: url(&quot;./index_files/textures/white_wall_tile004a.png&quot;); width: 510px; height: 510px; transform: translate3d(495px, -3015px, -1530px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); background-size: 510px;"></div>
@@ -103,7 +103,7 @@
 				<div class="tile" style="background-image: url(&quot;./index_files/textures/white_floor_tile004a.png&quot;); width: 510px; height: 510px; transform: translate3d(-15px, -2505px, 0px) rotateX(90deg) rotateY(0deg) rotateZ(0deg); background-size: 510px; box-shadow: black 30px 0px 30px -30px inset;"></div>
 				<div class="tile" style="background-image: url(&quot;./index_files/textures/white_floor_tile004a.png&quot;); width: 510px; height: 510px; transform: translate3d(-15px, -2505px, 1020px) rotateX(90deg) rotateY(0deg) rotateZ(0deg); background-size: 510px; box-shadow: black 30px 0px 30px -30px inset, black 0px -30px 30px -30px inset;"></div>
 				<div class="tile" style="background-image: url(&quot;./index_files/textures/white_floor_tile004a.png&quot;); width: 510px; height: 510px; transform: translate3d(1005px, -2505px, -2040px) rotateX(90deg) rotateY(0deg) rotateZ(0deg); background-size: 510px; box-shadow: black 30px 0px 30px -30px inset, black -30px 0px 30px -30px inset;"></div>
-				<div class="tile" style="background-image: url(&quot;./index_files/textures/white_floor_tile004a.png&quot;); width: 510px; height: 510px; transform: translate3d(-15px, -2505px, 510px) rotateX(90deg) rotateY(0deg) rotateZ(0deg); background-size: 510px; box-shadow: black 30px 0px 30px -30px inset;"></div>
+				<div class="tile hovered" style="background-image: url(&quot;./index_files/textures/white_floor_tile004a.png&quot;); width: 510px; height: 510px; transform: translate3d(-15px, -2505px, 510px) rotateX(90deg) rotateY(0deg) rotateZ(0deg); background-size: 510px; box-shadow: black 30px 0px 30px -30px inset;"><div id="edit-handles"><div class="edit-handle"></div><div class="edit-handle"></div><div class="edit-handle"></div><div class="edit-handle"></div><div class="edit-handle"></div><div class="edit-handle"></div><div class="edit-handle"></div><div class="edit-handle"></div><div class="edit-handle hovered"></div></div></div>
 				<div class="tile" style="background-image: url(&quot;./index_files/textures/white_floor_tile004a.png&quot;); width: 510px; height: 510px; transform: translate3d(1005px, -2505px, 1020px) rotateX(90deg) rotateY(0deg) rotateZ(0deg); background-size: 510px; box-shadow: black 0px -30px 30px -30px inset, black -30px 0px 30px -30px inset;"></div>
 				<div class="tile" style="background-image: url(&quot;./index_files/textures/white_floor_tile004a.png&quot;); width: 510px; height: 510px; transform: translate3d(495px, -2505px, 1020px) rotateX(90deg) rotateY(0deg) rotateZ(0deg); background-size: 510px; box-shadow: black 0px -30px 30px -30px inset;"></div>
 				<div class="tile" style="background-image: url(&quot;./index_files/textures/white_floor_tile004b.png&quot;); width: 510px; height: 1530px; transform: translate3d(1005px, -1995px, 0px) rotateX(90deg) rotateY(0deg) rotateZ(0deg); background-size: 510px; box-shadow: black 30px 0px 30px -30px inset, black -30px 0px 30px -30px inset;"></div>
@@ -190,6 +190,7 @@
 
 			</div>
 		</div>
+
 
 
 

@@ -35,7 +35,7 @@ const edit = {
 	tool: document.body.dataset.editTool,
 	preventMouse: false,
 	controller: null,
-	keys: { Digit1: "add", Digit2: "remove", Digit3: "move", Digit4: "rotate", Digit5: "size" },
+	keys: { Digit1: "add", Digit2: "remove", Digit3: "move", Digit4: "rotate", Digit5: "size", Digit6: "shadow", Digit7: "flip", Digit8: "turn" },
 }
 
 const vec = {
@@ -86,7 +86,7 @@ function checkTriangleCollision(p, tri, radius) {
 }
 
 const editActions = {
-	remove: () => {
+	remove() {
 		if (hovered.tile.previousSibling.wholeText) hovered.tile.previousSibling.remove();
 		hovered.tile.remove();
 	},
@@ -123,6 +123,26 @@ const editActions = {
 			if (width - delta < 0) transform += ` translateX(${width - delta}px)`;
 		}
 		hovered.tile.style.transform = transform;
+	},
+	shadow: ({ dx, dy }) => {
+		let shadow = hovered.tile.style.boxShadow ? hovered.tile.style.boxShadow + "," : "";
+		if (dx === 0 && dy === 0) {
+			if (shadow) shadow = "";
+			else shadow = `inset 0 0 30px black`;
+		}
+		else {
+			if (dx !== 0) shadow += `inset ${dx * -30}px 0 30px -30px black`;
+			if (dy !== 0) shadow += `inset 0 ${dy * -30}px 30px -30px black`;
+		}
+		hovered.tile.style.boxShadow = shadow;
+	},
+	turn() {
+		hovered.tile.style.transform += `translateX(100%) rotateZ(90deg)`;
+		mergeTransforms(hovered.tile);
+	},
+	flip() {
+		hovered.tile.style.transform += `translateX(100%) rotateY(180deg)`;
+		mergeTransforms(hovered.tile);
 	},
 }
 
@@ -509,6 +529,9 @@ function handleEdit() {
 
 	if (edit.tool === "add") return editActions.add({dx, dy});
 	if (edit.tool === "remove") return editActions.remove();
+	if (edit.tool === "shadow") return editActions.shadow({dx, dy});
+	if (edit.tool === "turn") return editActions.turn();
+	if (edit.tool === "flip") return editActions.flip();
 
 	const width = parseInt(hovered.tile.style.width) || 0;
 	const height = parseInt(hovered.tile.style.height) || 0;
