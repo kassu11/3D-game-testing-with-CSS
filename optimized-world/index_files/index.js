@@ -4,6 +4,7 @@
 
 const viewport = document.querySelector(".viewport#world-viewport");
 const camera = document.querySelector(".camera#world-camera");
+const skyboxCamera = document.querySelector(".camera#skybox-camera");
 const playerShadow = document.querySelector("#player-shadow");
 
 // =============================================================================
@@ -350,6 +351,11 @@ function renderLoop(alpha) {
 		rotateY(${rotation.y}rad) 
 		rotateZ(${rotation.z}rad) 
 		translate3d(${-x}px, ${150 - y}px, ${-z}px)`;
+
+	skyboxCamera.style.transform = `
+		rotateX(${rotation.x}rad) 
+		rotateY(${rotation.y}rad) 
+		rotateZ(${rotation.z}rad)`;
 
   playerShadow.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(90deg) translateX(-50%) translateY(-50%)`;
 }
