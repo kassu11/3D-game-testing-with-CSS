@@ -708,9 +708,43 @@ function renderLoop(currentTime, previousTime) {
     //   `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) ` +
     //     `translate3d(${-(position.x + (0 - 345 / 2))}px, ${-(position.y + (300 - 315 / 2))}px, ${-position.z}px)`;
 
+// rotateX(-0.13rad) rotateY(1.715rad) rotateZ(0rad) translate3d(-228.998px, 162.32px, -897.484px)
+    const fWidth = 345;
+    const fHeight = 315;
+    const fCenterX = 100;
+    const fCenterY = 100;
+    const fCenterZ = 100;
+    const x = Math.max(fCenterX - fWidth / 2, Math.min(fCenterX + position.x, fCenterX + fWidth / 2));
+    console.log(x, position.x);
+    const y = Math.max(-135, Math.min(-position.y, 150));
+    const z = 900;
+    const tileX = 172.5;
+    const tileY = Math.max(-15, Math.min(-position.y, 300));
+    const tileZ = 172.5;
+    // 1. Get the vector components
+    const dx = position.x - tileX;
+    const dy = position.y - tileY;
+    const dz = position.z - tileZ;
+
+    // 2. Find the horizontal distance (hypotenuse of x and z)
+    const distanceXZ = Math.sqrt(dx * dx + dz * dz);
+
+    // 3. Calculate angles in radians
+    // rotateY: The angle on the floor plane
+    const angleY = Math.atan2(dx, dz); 
+
+    // rotateX: The angle looking up or down
+    const angleX = Math.atan2(dy, distanceXZ);
+
+    // Apply to transform (Note: rotateZ is usually 0 unless you want the camera to tilt sideways)
     camera2.style.transform =
-      `rotateX(${rotation.x}rad) rotateY(${rotation.y}rad) rotateZ(${rotation.z}rad) ` +
-        `translate3d(${-(position.x)}px, ${-(position.y)}px, ${-position.z}px)`;
+      `rotateX(${angleX}rad) rotateY(${-angleY}rad) rotateZ(${rotation.z}rad) ` +
+        `translate3d(${-x}px, ${y}px, ${-z}px)`;
+    // camera2.style.transform = `
+    //   rotateX(${-angleY}rad) 
+    //   rotateY(${0}rad) 
+    //   rotateZ(${Math.PI}rad) 
+    //   translate3d(${-x}px, ${-y}px, ${-z}px)`;
 
   }
 
