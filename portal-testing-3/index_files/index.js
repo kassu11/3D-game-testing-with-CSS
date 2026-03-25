@@ -421,17 +421,24 @@ function renderLoop(alpha) {
 		// 	rotateZ(${rotation.z}rad) 
 		// 	translate3d(${-p.centerX}px, ${-p.centerY}px, ${-p.centerZ}px)`;
 		const m = matrixFromTransform(getComputedStyle(camera).transform);
-		const inverse = gluInvertMatrix(m);
+		const inverse = gluInvertMatrix(multiplyMatrix4(m, p.matrix));
+		// const finalM = multiplyMatrix4(p.invMatrix, inverse);
 		// console.log("" + inverse);
 		// Toimii 0 0 0 0 0 
-		p.iframe.style.transform = `matrix3d(${inverse}) translate3d(-50%, -50%, calc(-1 * var(--perspective)))`;
+		p.iframe.style.transform = `matrix3d(${inverse}) translate3d(-50%, -50%, calc(-1 * var(--perspective))) `;
 		// p.frame.style.translate = "-50% -50% calc(-1 * var(--perspective))";
 
 		//    translate: -50% -50%;
     // transform: translate3d(0px, -400px, calc(-1 * var(--perspective))) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
 		//
-		// console.log(`matrix3d(${inverse})`);
+		// good: translate3d(250px, 600px, 880px) rotateX(0deg) rotateY(0deg) rotateZ(0deg) translate3d(-50%, -50%, calc(-1 * var(--perspective)))
+		// good: translate3d(0px, -400px, 0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg) translate3d(-50%, -50%, calc(-1 * var(--perspective))) translate3d(250px, 1000px, 880px)
+		// console.log(`1 matrix3d(${inverse})`);
+		// console.log(`2 matrix3d(${p.invMatrix})`);
 		// matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,0,-400,0,1)
+		//
+		// 1 matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,250,-1100,0,1)
+		// 2 matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,499.99200439453125,1999.97998046875,1759.9759521484375,1)
 
 
 		p.camera.style.transform = `
@@ -763,6 +770,7 @@ function addPortalVertices(elem, w, h, m) {
 		portal.body = innerDoc.body;
 		portal.skybox = skybox;
 		portal.iframe = elem;
+		portal.matrix = m;
 		portals.push(portal);
 	};
 
